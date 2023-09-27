@@ -41,5 +41,5 @@ class OpSet12(OpSet11):
             "paddle.einsum",
             inputs = [val_x.name, val_y.name],
             outputs = [node.name],
-            equation = "i,j->ij",
+            equation = node.attr_map['equation'],
             )
