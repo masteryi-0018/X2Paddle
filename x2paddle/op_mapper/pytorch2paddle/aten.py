@@ -4219,10 +4219,6 @@ def aten_norm(mapper, graph, node):
     return current_inputs, current_outputs
 
 
-# pytorch has one more param: `dtype`, which is not used.
-aten_linalg_vector_norm = aten_norm
-
-
 def aten___not__(mapper, graph, node):
     """ 构造对bool型取负的PaddleLayer。
     TorchScript示例:
@@ -6853,3 +6849,9 @@ def aten_scaled_dot_product_attention(mapper, graph, node):
                     **layer_attrs)
 
     return current_inputs, current_outputs
+
+
+# pytorch has one more param: `dtype`, which is not used.
+aten_linalg_vector_norm = aten_norm
+
+aten_unsafe_chunk = aten_chunk
