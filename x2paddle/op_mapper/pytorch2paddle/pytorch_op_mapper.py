@@ -25,7 +25,9 @@ class PyTorchOpMapper():
 
     def __init__(self, decoder):
         self.script = decoder.script
-        self.input_examples = decoder.input_examples
+        self.input_examples = list(
+            decoder.input_examples.values()) if isinstance(
+                decoder.input_examples, dict) else decoder.input_examples
         self.paddle_params = dict()
         self.outputs_info = {}  # key为output unique id，value为当前节点的输出名字
         self.pytorch_params = {}  # key为节点名，value为参数

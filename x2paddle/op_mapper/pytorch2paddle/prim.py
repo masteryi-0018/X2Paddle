@@ -31,6 +31,7 @@ def prim_Constant(mapper, graph, node):
     output = list(node.outputs())[0]
     value = output.toIValue()
     output_type = output.type()
+
     if isinstance(value, str):
         value = string(value)
     if "Tensor" in str(output_type):
