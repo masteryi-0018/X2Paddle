@@ -17,7 +17,11 @@ from functools import partial
 
 
 def add_parambase_function(func):
-    setattr(paddle.fluid.framework.ParamBase, func.__name__, func)
+    try:
+        # paddle `2.4.0`
+        setattr(paddle.fluid.framework.ParamBase, func.__name__, func)
+    except AttributeError:
+        setattr(paddle.base.framework.EagerParamBase, func.__name__, func)
 
 
 @add_parambase_function
@@ -25,8 +29,7 @@ def normal_(self, mean=0.0, std=1.0):
     replaced_param = paddle.create_parameter(
         shape=self.shape,
         dtype=self.dtype,
-        default_initializer=paddle.nn.initializer.Normal(
-            mean=mean, std=std))
+        default_initializer=paddle.nn.initializer.Normal(mean=mean, std=std))
     paddle.assign(self, replaced_param)
 
 

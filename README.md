@@ -4,20 +4,7 @@
 [![PyPI Status](https://pepy.tech/badge/x2paddle/month)](https://pepy.tech/project/x2paddle)
 [![License](https://img.shields.io/badge/license-Apache%202-blue.svg)](LICENSE)
 [![Version](https://img.shields.io/github/release/PaddlePaddle/X2Paddle.svg)](https://github.com/PaddlePaddle/X2Paddle/releases)
-![python version](https://img.shields.io/badge/python-3.5+-orange.svg)  
-
-## 🆕 新开源项目FastDeploy
-
-若您的最终目的是用于模型部署，当前飞桨提供[FastDeploy](https://github.com/PaddlePaddle/FastDeploy)，提供📦**开箱即用**的**云边端**部署体验, 支持超过 🔥150+ **Text**, **Vision**, **Speech**和**跨模态**模型，并实现🔚**端到端**的推理性能优化。
-
-- 欢迎Star🌟 [https://github.com/PaddlePaddle/FastDeploy](https://github.com/PaddlePaddle/FastDeploy)
-- [YOLOv5 C++ & Python 部署示例](https://github.com/PaddlePaddle/FastDeploy/tree/develop/examples/vision/detection/yolov5)
-- [YOLOv6 C++ & Python 部署示例](https://github.com/PaddlePaddle/FastDeploy/tree/develop/examples/vision/detection/yolov6)
-- [YOLOv7 C++ & Python 部署示例](https://github.com/PaddlePaddle/FastDeploy/tree/develop/examples/vision/detection/yolov7)
-- [RetinaFace C++ & Python 部署示例](https://github.com/PaddlePaddle/FastDeploy/tree/develop/examples/vision/facedet/retinaface)
-- [YOLOv5Face 安卓部署示例](https://github.com/PaddlePaddle/FastDeploy/tree/develop/java/android#yolov5face-java-api-%E8%AF%B4%E6%98%8E)
-
-**【问卷调查】** 为了更好的推进飞桨框架以及X2Paddle的迭代开发，诚邀您参加我们的问卷，期待您的宝贵意见:https://iwenjuan.baidu.com/?code=npyd51
+![python version](https://img.shields.io/badge/python-3.5+-orange.svg)
 
 ## 简介
 
@@ -29,7 +16,7 @@ X2Paddle是飞桨生态下的模型转换工具，致力于帮助其它深度学
 
 - **支持主流深度学习框架**
 
-  - 目前已经支持Caffe/TensorFlow/ONNX/PyTorch四大框架的预测模型的转换，PyTorch训练项目的转换，涵盖了目前市面主流深度学习框架
+  - 目前已经支持Caffe/TensorFlow/ONNX/PyTorch四大框架的预测模型的转换，PyTorch训练项目的转换，涵盖了目前市面主流深度学习框架，详见 ***[测试 demo ](./test_benchmark)***
 
 - **支持的模型丰富**
 
@@ -60,8 +47,8 @@ X2Paddle是飞桨生态下的模型转换工具，致力于帮助其它深度学
 ## 安装
 
 ### 环境依赖
-- python >= 3.5  
-- paddlepaddle >= 2.2.2
+- python >= 3.5
+- paddlepaddle >= 2.2.2 (官方验证到2.4.2)
 - tensorflow == 1.14 (如需转换TensorFlow模型)
 - onnx >= 1.6.0 (如需转换ONNX模型)
 - torch >= 1.5.0 (如需转换PyTorch模型)
@@ -139,7 +126,7 @@ x2paddle --framework=caffe --prototxt=deploy.prototxt --weight=deploy.caffemodel
 目前X2Paddle提供API方式转换模型，可参考[X2PaddleAPI](docs/inference_model_convertor/x2paddle_api.md)
 
 #### 一键转换Paddle-Lite支持格式
-可参考[使用X2paddle导出Padde-Lite支持格式](docs/inference_model_convertor/convert2lite_api.md)
+可参考[使用X2paddle导出Paddle-Lite支持格式](docs/inference_model_convertor/convert2lite_api.md)
 
 ### 功能二：PyTorch模型训练迁移
 
@@ -168,4 +155,7 @@ x2paddle --framework=caffe --prototxt=deploy.prototxt --weight=deploy.caffemodel
 
 ## :hugs:贡献代码:hugs:
 
-我们非常欢迎您为X2Paddle贡献代码或者提供使用建议。如果您可以修复某个issue或者增加一个新功能，欢迎给我们提交Pull Requests，如果有PyTorch训练项目转换需求欢迎随时提issue~
+我们非常欢迎您为X2Paddle贡献代码或者提供使用建议:
+- 如果您可以修复某个issue或者增加一个新功能，欢迎给我们提交Pull Requests
+- 可以使用[开发镜像](./docker)：[paddlepaddle/x2paddle:latest-dev-cuda11.2-cudnn8-gcc82](https://hub.docker.com/r/paddlepaddle/x2paddle/tags)，国内镜像下载地址：https://x2paddle.bj.bcebos.com/Docker/latest-dev-cuda11.2-cudnn8-gcc82.tar
+- 如果有PyTorch训练项目转换需求欢迎随时提issue

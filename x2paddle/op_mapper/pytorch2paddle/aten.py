@@ -14,10 +14,16 @@
 # limitations under the License.
 
 import copy
+import logging
+
 import numpy as np
 from x2paddle.core.util import name_generator, string
 from x2paddle.utils import paddle_dtypes
 from x2paddle.core.program import PaddleGraph
+
+logging.basicConfig(level=logging.INFO, format="%(message)s")
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
 
 dtype_dict = {
     0: string("uint8"),
@@ -63,12 +69,11 @@ def aten_sum(mapper, graph, node):
         layer_attrs["keepdim"] = mapper.attrs[inputs_name[2]]
     if inputs_name[3] in mapper.attrs:
         layer_attrs["dtype"] = mapper.attrs[inputs_name[3]]
-    graph.add_layer(
-        "paddle.sum",
-        inputs=layer_inputs,
-        outputs=layer_outputs,
-        scope_name=scope_name,
-        **layer_attrs)
+    graph.add_layer("paddle.sum",
+                    inputs=layer_inputs,
+                    outputs=layer_outputs,
+                    scope_name=scope_name,
+                    **layer_attrs)
     return current_inputs, current_outputs
 
 
@@ -94,11 +99,10 @@ def aten_abs(mapper, graph, node):
     # 获取当前节点输入的list
     current_inputs = list(layer_inputs.values())
 
-    graph.add_layer(
-        "paddle.abs",
-        inputs=layer_inputs,
-        outputs=layer_outputs,
-        scope_name=scope_name)
+    graph.add_layer("paddle.abs",
+                    inputs=layer_inputs,
+                    outputs=layer_outputs,
+                    scope_name=scope_name)
     return current_inputs, current_outputs
 
 
@@ -129,29 +133,26 @@ def aten_adaptive_avg_pool1d(mapper, graph, node):
     # 处理输入1，即%_output_size.1
     if inputs_name[1] in mapper.attrs:
         layer_attrs["output_size"] = mapper.attrs[inputs_name[1]][0]
-        graph.add_layer(
-            "paddle.nn.AdaptiveAvgPool1D",
-            inputs=layer_inputs,
-            outputs=layer_outputs,
-            scope_name=scope_name,
-            **layer_attrs)
+        graph.add_layer("paddle.nn.AdaptiveAvgPool1D",
+                        inputs=layer_inputs,
+                        outputs=layer_outputs,
+                        scope_name=scope_name,
+                        **layer_attrs)
     else:
         mapper._check_input(graph, inputs_node[1], inputs_name[1],
                             current_outputs, scope_name)
         layer_inputs["output_size"] = inputs_name[1]
         current_inputs.append(inputs_name[1])
-        graph.add_layer(
-            "prim.getitem",
-            inputs={"list": layer_inputs["output_size"]},
-            outputs=[layer_inputs["output_size"]],
-            scope_name=scope_name,
-            index=0)
-        graph.add_layer(
-            "paddle.nn.functional.adaptive_avg_pool1d",
-            inputs=layer_inputs,
-            outputs=layer_outputs[1:],
-            scope_name=scope_name,
-            **layer_attrs)
+        graph.add_layer("prim.getitem",
+                        inputs={"list": layer_inputs["output_size"]},
+                        outputs=[layer_inputs["output_size"]],
+                        scope_name=scope_name,
+                        index=0)
+        graph.add_layer("paddle.nn.functional.adaptive_avg_pool1d",
+                        inputs=layer_inputs,
+                        outputs=layer_outputs[1:],
+                        scope_name=scope_name,
+                        **layer_attrs)
     return current_inputs, current_outputs
 
 
@@ -182,23 +183,21 @@ def aten_adaptive_avg_pool2d(mapper, graph, node):
     # 处理输入1，即%_output_size.1
     if inputs_name[1] in mapper.attrs:
         layer_attrs["output_size"] = mapper.attrs[inputs_name[1]]
-        graph.add_layer(
-            "paddle.nn.AdaptiveAvgPool2D",
-            inputs=layer_inputs,
-            outputs=layer_outputs,
-            scope_name=scope_name,
-            **layer_attrs)
+        graph.add_layer("paddle.nn.AdaptiveAvgPool2D",
+                        inputs=layer_inputs,
+                        outputs=layer_outputs,
+                        scope_name=scope_name,
+                        **layer_attrs)
     else:
         mapper._check_input(graph, inputs_node[1], inputs_name[1],
                             current_outputs, scope_name)
         layer_inputs["output_size"] = inputs_name[1]
         current_inputs.append(inputs_name[1])
-        graph.add_layer(
-            "paddle.nn.functional.adaptive_avg_pool2d",
-            inputs=layer_inputs,
-            outputs=layer_outputs[1:],
-            scope_name=scope_name,
-            **layer_attrs)
+        graph.add_layer("paddle.nn.functional.adaptive_avg_pool2d",
+                        inputs=layer_inputs,
+                        outputs=layer_outputs[1:],
+                        scope_name=scope_name,
+                        **layer_attrs)
     return current_inputs, current_outputs
 
 
@@ -253,12 +252,11 @@ def aten_addmm(mapper, graph, node):
         layer_inputs["alpha"] = inputs_name[4]
         current_inputs.append(inputs_name[4])
 
-    graph.add_layer(
-        "paddle.addmm",
-        inputs=layer_inputs,
-        outputs=layer_outputs,
-        scope_name=scope_name,
-        **layer_attrs)
+    graph.add_layer("paddle.addmm",
+                    inputs=layer_inputs,
+                    outputs=layer_outputs,
+                    scope_name=scope_name,
+                    **layer_attrs)
     return current_inputs, current_outputs
 
 
@@ -300,19 +298,17 @@ def aten_add(mapper, graph, node):
             layer_inputs["alpha"] = inputs_name[2]
             current_inputs.append(inputs_name[2])
 
-        graph.add_layer(
-            "prim.add_",
-            inputs=layer_inputs,
-            outputs=layer_outputs,
-            scope_name=scope_name,
-            **layer_attrs)
+        graph.add_layer("prim.add_",
+                        inputs=layer_inputs,
+                        outputs=layer_outputs,
+                        scope_name=scope_name,
+                        **layer_attrs)
     else:
-        graph.add_layer(
-            "prim.add",
-            inputs=layer_inputs,
-            outputs=layer_outputs,
-            scope_name=scope_name,
-            **layer_attrs)
+        graph.add_layer("prim.add",
+                        inputs=layer_inputs,
+                        outputs=layer_outputs,
+                        scope_name=scope_name,
+                        **layer_attrs)
     return current_inputs, current_outputs
 
 
@@ -343,11 +339,10 @@ def aten___and__(mapper, graph, node):
     # 获取当前节点输入的list
     current_inputs = list(layer_inputs.values())
 
-    graph.add_layer(
-        "prim.and",
-        inputs=layer_inputs,
-        outputs=layer_outputs,
-        scope_name=scope_name)
+    graph.add_layer("prim.and",
+                    inputs=layer_inputs,
+                    outputs=layer_outputs,
+                    scope_name=scope_name)
     return current_inputs, current_outputs
 
 
@@ -377,11 +372,10 @@ def aten_append(mapper, graph, node):
     # 获取当前节点输入的list
     current_inputs = list(layer_inputs.values())
 
-    graph.add_layer(
-        "prim.append",
-        inputs=layer_inputs,
-        outputs=layer_outputs,
-        scope_name=scope_name)
+    graph.add_layer("prim.append",
+                    inputs=layer_inputs,
+                    outputs=layer_outputs,
+                    scope_name=scope_name)
     return current_inputs, current_outputs
 
 
@@ -472,15 +466,14 @@ def aten_arange(mapper, graph, node):
         else:
             layer_attrs["dtype"] = dtype_dict[mapper.attrs[inputs_name[3]]]
     else:
-        raise Exception("Unknown aten::arange signature taking " + str(
-            len(inputs_name)) + " arguments.")
+        raise Exception("Unknown aten::arange signature taking " +
+                        str(len(inputs_name)) + " arguments.")
 
-    graph.add_layer(
-        "paddle.arange",
-        inputs=layer_inputs,
-        outputs=layer_outputs,
-        scope_name=scope_name,
-        **layer_attrs)
+    graph.add_layer("paddle.arange",
+                    inputs=layer_inputs,
+                    outputs=layer_outputs,
+                    scope_name=scope_name,
+                    **layer_attrs)
     return current_inputs, current_outputs
 
 
@@ -524,12 +517,11 @@ def aten_argmax(mapper, graph, node):
         layer_inputs["keepdim"] = inputs_name[2]
         current_inputs.append(inputs_name[2])
 
-    graph.add_layer(
-        "paddle.argmax",
-        inputs=layer_inputs,
-        outputs=layer_outputs,
-        scope_name=scope_name,
-        **layer_attrs)
+    graph.add_layer("paddle.argmax",
+                    inputs=layer_inputs,
+                    outputs=layer_outputs,
+                    scope_name=scope_name,
+                    **layer_attrs)
     return current_inputs, current_outputs
 
 
@@ -573,21 +565,20 @@ def aten_avg_pool2d(mapper, graph, node):
     # 处理输入5，即%272
     layer_attrs["exclusive"] = not mapper.attrs[inputs_name[5]]
     # 处理输入6，即%271
-    graph.add_layer(
-        "prim.assert",
-        inputs={},
-        outputs=[inputs_name[6] + "_assert"],
-        scope_name=scope_name if scope_name == "" else scope_name + "_assert",
-        type="eq",
-        key=mapper.attrs[inputs_name[6]],
-        value=None)
+    graph.add_layer("prim.assert",
+                    inputs={},
+                    outputs=[inputs_name[6] + "_assert"],
+                    scope_name=scope_name if scope_name == "" else scope_name +
+                    "_assert",
+                    type="eq",
+                    key=mapper.attrs[inputs_name[6]],
+                    value=None)
 
-    graph.add_layer(
-        kernel="paddle.nn.AvgPool2D",
-        inputs=layer_inputs,
-        outputs=layer_outputs,
-        scope_name=scope_name,
-        **layer_attrs)
+    graph.add_layer(kernel="paddle.nn.AvgPool2D",
+                    inputs=layer_inputs,
+                    outputs=layer_outputs,
+                    scope_name=scope_name,
+                    **layer_attrs)
 
     return current_inputs, current_outputs
 
@@ -632,21 +623,20 @@ def aten_avg_pool3d(mapper, graph, node):
     # 处理输入5，即%272
     layer_attrs["exclusive"] = not mapper.attrs[inputs_name[5]]
     # 处理输入6，即%271
-    graph.add_layer(
-        "prim.assert",
-        inputs={},
-        outputs=[inputs_name[6] + "_assert"],
-        scope_name=scope_name if scope_name == "" else scope_name + "_assert",
-        type="eq",
-        key=mapper.attrs[inputs_name[6]],
-        value=None)
+    graph.add_layer("prim.assert",
+                    inputs={},
+                    outputs=[inputs_name[6] + "_assert"],
+                    scope_name=scope_name if scope_name == "" else scope_name +
+                    "_assert",
+                    type="eq",
+                    key=mapper.attrs[inputs_name[6]],
+                    value=None)
 
-    graph.add_layer(
-        kernel="paddle.nn.AvgPool3D",
-        inputs=layer_inputs,
-        outputs=layer_outputs,
-        scope_name=scope_name,
-        **layer_attrs)
+    graph.add_layer(kernel="paddle.nn.AvgPool3D",
+                    inputs=layer_inputs,
+                    outputs=layer_outputs,
+                    scope_name=scope_name,
+                    **layer_attrs)
     return current_inputs, current_outputs
 
 
@@ -690,21 +680,20 @@ def aten_avg_pool1d(mapper, graph, node):
     # 处理输入5，即%272
     layer_attrs["exclusive"] = not mapper.attrs[inputs_name[5]]
     # 处理输入6，即%271
-    graph.add_layer(
-        "prim.assert",
-        inputs={},
-        outputs=[inputs_name[6] + "_assert"],
-        scope_name=scope_name if scope_name == "" else scope_name + "_assert",
-        type="eq",
-        key=mapper.attrs[inputs_name[6]],
-        value=None)
+    graph.add_layer("prim.assert",
+                    inputs={},
+                    outputs=[inputs_name[6] + "_assert"],
+                    scope_name=scope_name if scope_name == "" else scope_name +
+                    "_assert",
+                    type="eq",
+                    key=mapper.attrs[inputs_name[6]],
+                    value=None)
 
-    graph.add_layer(
-        kernel="paddle.nn.AvgPool1D",
-        inputs=layer_inputs,
-        outputs=layer_outputs,
-        scope_name=scope_name,
-        **layer_attrs)
+    graph.add_layer(kernel="paddle.nn.AvgPool1D",
+                    inputs=layer_inputs,
+                    outputs=layer_outputs,
+                    scope_name=scope_name,
+                    **layer_attrs)
     return current_inputs, current_outputs
 
 
@@ -763,12 +752,11 @@ def aten_batch_norm(mapper, graph, node):
     # 处理输入7，即%766
     layer_attrs["epsilon"] = mapper.attrs[inputs_name[7]]
 
-    graph.add_layer(
-        "paddle.nn.BatchNorm",
-        inputs=layer_inputs,
-        outputs=layer_outputs,
-        scope_name=scope_name,
-        **layer_attrs)
+    graph.add_layer("paddle.nn.BatchNorm",
+                    inputs=layer_inputs,
+                    outputs=layer_outputs,
+                    scope_name=scope_name,
+                    **layer_attrs)
     return current_inputs, current_outputs
 
 
@@ -794,11 +782,10 @@ def aten_bitwise_not(mapper, graph, node):
     # 获取当前节点输入的list
     current_inputs = list(layer_inputs.values())
 
-    graph.add_layer(
-        "prim.not",
-        inputs=layer_inputs,
-        outputs=layer_outputs,
-        scope_name=scope_name)
+    graph.add_layer("prim.not",
+                    inputs=layer_inputs,
+                    outputs=layer_outputs,
+                    scope_name=scope_name)
     return current_inputs, current_outputs
 
 
@@ -829,11 +816,10 @@ def aten_bitwise_xor(mapper, graph, node):
     # 获取当前节点输入的list
     current_inputs = list(layer_inputs.values())
 
-    graph.add_layer(
-        "prim.or",
-        inputs=layer_inputs,
-        outputs=layer_outputs,
-        scope_name=scope_name)
+    graph.add_layer("prim.or",
+                    inputs=layer_inputs,
+                    outputs=layer_outputs,
+                    scope_name=scope_name)
     return current_inputs, current_outputs
 
 
@@ -864,11 +850,10 @@ def aten_bitwise_and(mapper, graph, node):
     # 获取当前节点输入的list
     current_inputs = list(layer_inputs.values())
 
-    graph.add_layer(
-        "prim.and",
-        inputs=layer_inputs,
-        outputs=layer_outputs,
-        scope_name=scope_name)
+    graph.add_layer("prim.and",
+                    inputs=layer_inputs,
+                    outputs=layer_outputs,
+                    scope_name=scope_name)
     return current_inputs, current_outputs
 
 
@@ -899,11 +884,10 @@ def aten_bmm(mapper, graph, node):
     # 获取当前节点输入的list
     current_inputs = list(layer_inputs.values())
 
-    graph.add_layer(
-        "paddle.bmm",
-        inputs=layer_inputs,
-        outputs=layer_outputs,
-        scope_name=scope_name)
+    graph.add_layer("paddle.bmm",
+                    inputs=layer_inputs,
+                    outputs=layer_outputs,
+                    scope_name=scope_name)
     return current_inputs, current_outputs
 
 
@@ -938,12 +922,11 @@ def aten_cat(mapper, graph, node):
                             current_outputs, scope_name)
         layer_inputs["axis"] = inputs_name[1]
         current_inputs.append(inputs_name[1])
-    graph.add_layer(
-        "paddle.concat",
-        inputs=layer_inputs,
-        outputs=layer_outputs,
-        scope_name=scope_name,
-        **layer_attrs)
+    graph.add_layer("paddle.concat",
+                    inputs=layer_inputs,
+                    outputs=layer_outputs,
+                    scope_name=scope_name,
+                    **layer_attrs)
     return current_inputs, current_outputs
 
 
@@ -987,12 +970,11 @@ def aten_chunk(mapper, graph, node):
                             current_outputs, scope_name)
         layer_inputs["axis"] = inputs_name[2]
         current_inputs.append(inputs_name[2])
-    graph.add_layer(
-        "paddle.split",
-        inputs=layer_inputs,
-        outputs=layer_outputs,
-        scope_name=scope_name,
-        **layer_attrs)
+    graph.add_layer("paddle.split",
+                    inputs=layer_inputs,
+                    outputs=layer_outputs,
+                    scope_name=scope_name,
+                    **layer_attrs)
     return current_inputs, current_outputs
 
 
@@ -1037,12 +1019,11 @@ def aten_clamp(mapper, graph, node):
         layer_inputs["max"] = inputs_name[2]
         current_inputs.append(inputs_name[2])
 
-    graph.add_layer(
-        "paddle.clip",
-        inputs=layer_inputs,
-        outputs=layer_outputs,
-        scope_name=scope_name,
-        **layer_attrs)
+    graph.add_layer("paddle.clip",
+                    inputs=layer_inputs,
+                    outputs=layer_outputs,
+                    scope_name=scope_name,
+                    **layer_attrs)
     return current_inputs, current_outputs
 
 
@@ -1078,12 +1059,11 @@ def aten_clamp_min(mapper, graph, node):
         layer_inputs["min"] = inputs_name[1]
         current_inputs.append(inputs_name[1])
 
-    graph.add_layer(
-        "paddle.clip",
-        inputs=layer_inputs,
-        outputs=layer_outputs,
-        scope_name=scope_name,
-        **layer_attrs)
+    graph.add_layer("paddle.clip",
+                    inputs=layer_inputs,
+                    outputs=layer_outputs,
+                    scope_name=scope_name,
+                    **layer_attrs)
     return current_inputs, current_outputs
 
 
@@ -1109,11 +1089,10 @@ def aten_clone(mapper, graph, node):
 
     current_inputs = list(layer_inputs.values())
 
-    graph.add_layer(
-        "paddle.clone",
-        inputs=layer_inputs,
-        outputs=layer_outputs,
-        scope_name=scope_name)
+    graph.add_layer("paddle.clone",
+                    inputs=layer_inputs,
+                    outputs=layer_outputs,
+                    scope_name=scope_name)
     return current_inputs, current_outputs
 
 
@@ -1145,12 +1124,11 @@ def aten_complex(mapper, graph, node):
     # 获取当前节点输入的list
     current_inputs = list(layer_inputs.values())
 
-    graph.add_layer(
-        "paddle.complex",
-        inputs=layer_inputs,
-        outputs=layer_outputs,
-        scope_name=scope_name,
-        **layer_attrs)
+    graph.add_layer("paddle.complex",
+                    inputs=layer_inputs,
+                    outputs=layer_outputs,
+                    scope_name=scope_name,
+                    **layer_attrs)
     return current_inputs, current_outputs
 
 
@@ -1174,11 +1152,10 @@ def aten_copy(mapper, graph, node):
                         scope_name)
     layer_inputs["input"] = inputs_name[0]
     current_inputs = list(layer_inputs.values())
-    graph.add_layer(
-        "prim.equal",
-        inputs=layer_inputs,
-        outputs=layer_outputs,
-        scope_name=scope_name)
+    graph.add_layer("prim.equal",
+                    inputs=layer_inputs,
+                    outputs=layer_outputs,
+                    scope_name=scope_name)
 
     return current_inputs, current_outputs
 
@@ -1210,11 +1187,10 @@ def aten___contains__(mapper, graph, node):
     # 获取当前节点输入的list
     current_inputs = list(layer_inputs.values())
 
-    graph.add_layer(
-        "prim.contain",
-        inputs=layer_inputs,
-        outputs=layer_outputs,
-        scope_name=scope_name)
+    graph.add_layer("prim.contain",
+                    inputs=layer_inputs,
+                    outputs=layer_outputs,
+                    scope_name=scope_name)
     return current_inputs, current_outputs
 
 
@@ -1264,20 +1240,18 @@ def aten_constant_pad_nd(mapper, graph, node):
             layer_attrs["pad"] = [0, 0] + padding_attr
         else:
             layer_attrs["pad"] = padding_attr
-        graph.add_layer(
-            kernel_name,
-            inputs=layer_inputs,
-            outputs=[output_name],
-            scope_name=scope_name,
-            **layer_attrs)
+        graph.add_layer(kernel_name,
+                        inputs=layer_inputs,
+                        outputs=[output_name],
+                        scope_name=scope_name,
+                        **layer_attrs)
     else:
         layer_inputs["input"] = inputs_name[0]
-        graph.add_layer(
-            "custom_layer:Pad",
-            inputs=layer_inputs,
-            outputs=[output_name],
-            scope_name=scope_name,
-            **layer_attrs)
+        graph.add_layer("custom_layer:Pad",
+                        inputs=layer_inputs,
+                        outputs=[output_name],
+                        scope_name=scope_name,
+                        **layer_attrs)
     current_inputs = list(layer_inputs.values())
     return current_inputs, current_outputs
 
@@ -1306,11 +1280,10 @@ def aten_contiguous(mapper, graph, node):
     # 获取当前节点输入的list
     current_inputs = list(layer_inputs.values())
 
-    graph.add_layer(
-        "prim.equal",
-        inputs=layer_inputs,
-        outputs=layer_outputs,
-        scope_name=scope_name)
+    graph.add_layer("prim.equal",
+                    inputs=layer_inputs,
+                    outputs=layer_outputs,
+                    scope_name=scope_name)
     return current_inputs, current_outputs
 
 
@@ -1367,12 +1340,75 @@ def aten_conv2d(mapper, graph, node):
     layer_attrs["groups"] = mapper.attrs[inputs_name[6]]
     layer_attrs['in_channels'] = weights.shape[1] * mapper.attrs[inputs_name[6]]
 
-    graph.add_layer(
-        "paddle.nn.Conv2D",
-        inputs=layer_inputs,
-        outputs=layer_outputs,
-        scope_name=scope_name,
-        **layer_attrs)
+    graph.add_layer("paddle.nn.Conv2D",
+                    inputs=layer_inputs,
+                    outputs=layer_outputs,
+                    scope_name=scope_name,
+                    **layer_attrs)
+    return current_inputs, current_outputs
+
+
+def aten__convolution_mode(mapper, graph, node):
+    """
+    TorchScript Code:
+        %input.10 : Tensor = aten::_convolution_mode(%inputs, %weight, %3, %13, %7, %14, %11)
+        Parameter meaning:
+        %input.10 (Tensor): Output Tensor
+        %inputs (Tensor): Input Tensor
+        %weight (Tensor): weights
+        %3 (Tensor): bias
+        %13 (list): stride
+        %7 (list): padding
+        %14 (list): dilation
+        %11 (list): groups
+    """
+    scope_name = mapper.normalize_scope_name(node)
+    inputs_name, inputs_node = mapper._get_inputs_name(node)
+    output_name = mapper._get_outputs_name(node)[0]
+    layer_outputs = [output_name]
+    layer_inputs = {}
+    layer_attrs = {}
+    # output list
+    current_outputs = [output_name]
+    # deal with inputs
+    mapper._check_input(graph, inputs_node[0], inputs_name[0], current_outputs,
+                        scope_name)
+    layer_inputs["x"] = inputs_name[0]
+    mapper._check_input(graph, inputs_node[1], inputs_name[1], current_outputs,
+                        scope_name)
+    layer_inputs["weight"] = inputs_name[1]
+    layer_attrs["bias"] = mapper.attrs[inputs_name[2]]
+    current_inputs = list(layer_inputs.values())
+    # deal with stride
+    layer_attrs["stride"] = mapper.attrs[inputs_name[3]]
+    # deal with padding
+    padding = mapper.attrs[inputs_name[4]]
+    if isinstance(padding, str):
+        layer_attrs["padding"] = padding.upper()
+    else:
+        layer_attrs["padding"] = padding
+    # deal with dilation
+    layer_attrs["dilation"] = mapper.attrs[inputs_name[5]]
+    # deal with groups
+    layer_attrs["groups"] = mapper.attrs[inputs_name[6]]
+    if len(layer_attrs["stride"]) == 1:
+        graph.add_layer("paddle.nn.functional.conv1d",
+                        inputs=layer_inputs,
+                        outputs=layer_outputs,
+                        scope_name=scope_name,
+                        **layer_attrs)
+    elif len(layer_attrs["stride"]) == 2:
+        graph.add_layer("paddle.nn.functional.conv2d",
+                        inputs=layer_inputs,
+                        outputs=layer_outputs,
+                        scope_name=scope_name,
+                        **layer_attrs)
+    elif len(layer_attrs["stride"]) == 3:
+        graph.add_layer("paddle.nn.functional.conv3d",
+                        inputs=layer_inputs,
+                        outputs=layer_outputs,
+                        scope_name=scope_name,
+                        **layer_attrs)
     return current_inputs, current_outputs
 
 
@@ -1424,53 +1460,47 @@ def aten__convolution(mapper, graph, node):
             if mapper.attrs[inputs_name[6]]:
                 # only convtranspose have output_padding attr
                 layer_attrs["output_padding"] = mapper.attrs[inputs_name[7]]
-                graph.add_layer(
-                    "paddle.nn.functional.conv1d_transpose",
-                    inputs=layer_inputs,
-                    outputs=layer_outputs,
-                    scope_name=scope_name,
-                    **layer_attrs)
+                graph.add_layer("paddle.nn.functional.conv1d_transpose",
+                                inputs=layer_inputs,
+                                outputs=layer_outputs,
+                                scope_name=scope_name,
+                                **layer_attrs)
             else:
-                graph.add_layer(
-                    "paddle.nn.functional.conv1d",
-                    inputs=layer_inputs,
-                    outputs=layer_outputs,
-                    scope_name=scope_name,
-                    **layer_attrs)
+                graph.add_layer("paddle.nn.functional.conv1d",
+                                inputs=layer_inputs,
+                                outputs=layer_outputs,
+                                scope_name=scope_name,
+                                **layer_attrs)
         elif len(layer_attrs["stride"]) == 2:
             if mapper.attrs[inputs_name[6]]:
                 # only convtranspose have output_padding attr
                 layer_attrs["output_padding"] = mapper.attrs[inputs_name[7]]
-                graph.add_layer(
-                    "paddle.nn.functional.conv2d_transpose",
-                    inputs=layer_inputs,
-                    outputs=layer_outputs,
-                    scope_name=scope_name,
-                    **layer_attrs)
+                graph.add_layer("paddle.nn.functional.conv2d_transpose",
+                                inputs=layer_inputs,
+                                outputs=layer_outputs,
+                                scope_name=scope_name,
+                                **layer_attrs)
             else:
-                graph.add_layer(
-                    "paddle.nn.functional.conv2d",
-                    inputs=layer_inputs,
-                    outputs=layer_outputs,
-                    scope_name=scope_name,
-                    **layer_attrs)
+                graph.add_layer("paddle.nn.functional.conv2d",
+                                inputs=layer_inputs,
+                                outputs=layer_outputs,
+                                scope_name=scope_name,
+                                **layer_attrs)
         elif len(layer_attrs["stride"]) == 3:
             if mapper.attrs[inputs_name[6]]:
                 # only convtranspose have output_padding attr
                 layer_attrs["output_padding"] = mapper.attrs[inputs_name[7]]
-                graph.add_layer(
-                    "paddle.nn.functional.conv3d_transpose",
-                    inputs=layer_inputs,
-                    outputs=layer_outputs,
-                    scope_name=scope_name,
-                    **layer_attrs)
+                graph.add_layer("paddle.nn.functional.conv3d_transpose",
+                                inputs=layer_inputs,
+                                outputs=layer_outputs,
+                                scope_name=scope_name,
+                                **layer_attrs)
             else:
-                graph.add_layer(
-                    "paddle.nn.functional.conv3d",
-                    inputs=layer_inputs,
-                    outputs=layer_outputs,
-                    scope_name=scope_name,
-                    **layer_attrs)
+                graph.add_layer("paddle.nn.functional.conv3d",
+                                inputs=layer_inputs,
+                                outputs=layer_outputs,
+                                scope_name=scope_name,
+                                **layer_attrs)
         return current_inputs, current_outputs
     else:
         weights = mapper.pytorch_params[inputs_name[1]]
@@ -1514,53 +1544,47 @@ def aten__convolution(mapper, graph, node):
             if mapper.attrs[inputs_name[6]]:
                 # only convtranspose have output_padding attr
                 layer_attrs["output_padding"] = mapper.attrs[inputs_name[7]]
-                graph.add_layer(
-                    "paddle.nn.Conv1DTranspose",
-                    inputs=layer_inputs,
-                    outputs=layer_outputs,
-                    scope_name=scope_name,
-                    **layer_attrs)
+                graph.add_layer("paddle.nn.Conv1DTranspose",
+                                inputs=layer_inputs,
+                                outputs=layer_outputs,
+                                scope_name=scope_name,
+                                **layer_attrs)
             else:
-                graph.add_layer(
-                    "paddle.nn.Conv1D",
-                    inputs=layer_inputs,
-                    outputs=layer_outputs,
-                    scope_name=scope_name,
-                    **layer_attrs)
+                graph.add_layer("paddle.nn.Conv1D",
+                                inputs=layer_inputs,
+                                outputs=layer_outputs,
+                                scope_name=scope_name,
+                                **layer_attrs)
         elif len(weights.shape) == 4:
             if mapper.attrs[inputs_name[6]]:
                 # only convtranspose have output_padding attr
                 layer_attrs["output_padding"] = mapper.attrs[inputs_name[7]]
-                graph.add_layer(
-                    "paddle.nn.Conv2DTranspose",
-                    inputs=layer_inputs,
-                    outputs=layer_outputs,
-                    scope_name=scope_name,
-                    **layer_attrs)
+                graph.add_layer("paddle.nn.Conv2DTranspose",
+                                inputs=layer_inputs,
+                                outputs=layer_outputs,
+                                scope_name=scope_name,
+                                **layer_attrs)
             else:
-                graph.add_layer(
-                    "paddle.nn.Conv2D",
-                    inputs=layer_inputs,
-                    outputs=layer_outputs,
-                    scope_name=scope_name,
-                    **layer_attrs)
+                graph.add_layer("paddle.nn.Conv2D",
+                                inputs=layer_inputs,
+                                outputs=layer_outputs,
+                                scope_name=scope_name,
+                                **layer_attrs)
         else:
             if mapper.attrs[inputs_name[6]]:
                 # only convtranspose have output_padding attr
                 layer_attrs["output_padding"] = mapper.attrs[inputs_name[7]]
-                graph.add_layer(
-                    "paddle.nn.Conv3DTranspose",
-                    inputs=layer_inputs,
-                    outputs=layer_outputs,
-                    scope_name=scope_name,
-                    **layer_attrs)
+                graph.add_layer("paddle.nn.Conv3DTranspose",
+                                inputs=layer_inputs,
+                                outputs=layer_outputs,
+                                scope_name=scope_name,
+                                **layer_attrs)
             else:
-                graph.add_layer(
-                    "paddle.nn.Conv3D",
-                    inputs=layer_inputs,
-                    outputs=layer_outputs,
-                    scope_name=scope_name,
-                    **layer_attrs)
+                graph.add_layer("paddle.nn.Conv3D",
+                                inputs=layer_inputs,
+                                outputs=layer_outputs,
+                                scope_name=scope_name,
+                                **layer_attrs)
         return current_inputs, current_outputs
 
 
@@ -1619,12 +1643,11 @@ def aten_conv_transpose2d(mapper, graph, node):
     # 处理输入7，即%22
     layer_attrs["dilation"] = mapper.attrs[inputs_name[7]]
     layer_attrs['in_channels'] = weights.shape[0] * mapper.attrs[inputs_name[6]]
-    graph.add_layer(
-        "paddle.nn.Conv2DTranspose",
-        inputs=layer_inputs,
-        outputs=layer_outputs,
-        scope_name=scope_name,
-        **layer_attrs)
+    graph.add_layer("paddle.nn.Conv2DTranspose",
+                    inputs=layer_inputs,
+                    outputs=layer_outputs,
+                    scope_name=scope_name,
+                    **layer_attrs)
     return current_inputs, current_outputs
 
 
@@ -1650,11 +1673,10 @@ def aten_cos(mapper, graph, node):
     # 获取当前节点输入、输出的list
     current_inputs = list(layer_inputs.values())
 
-    graph.add_layer(
-        "paddle.cos",
-        inputs=layer_inputs,
-        outputs=layer_outputs,
-        scope_name=scope_name)
+    graph.add_layer("paddle.cos",
+                    inputs=layer_inputs,
+                    outputs=layer_outputs,
+                    scope_name=scope_name)
     return current_inputs, current_outputs
 
 
@@ -1696,12 +1718,11 @@ def aten_cumsum(mapper, graph, node):
     else:
         layer_attrs["dtype"] = dtype_dict[mapper.attrs[inputs_name[2]]]
 
-    graph.add_layer(
-        "paddle.cumsum",
-        inputs=layer_inputs,
-        outputs=layer_outputs,
-        scope_name=scope_name,
-        **layer_attrs)
+    graph.add_layer("paddle.cumsum",
+                    inputs=layer_inputs,
+                    outputs=layer_outputs,
+                    scope_name=scope_name,
+                    **layer_attrs)
     return current_inputs, current_outputs
 
 
@@ -1727,11 +1748,10 @@ def aten_detach(mapper, graph, node):
     layer_inputs["input"] = inputs_name[0]
     # 获取当前节点输入的list
     current_inputs = list(layer_inputs.values())
-    graph.add_layer(
-        "prim.equal",
-        inputs=layer_inputs,
-        outputs=layer_outputs,
-        scope_name=scope_name)
+    graph.add_layer("prim.equal",
+                    inputs=layer_inputs,
+                    outputs=layer_outputs,
+                    scope_name=scope_name)
 
     return current_inputs, current_outputs
 
@@ -1751,11 +1771,10 @@ def aten_dict(mapper, graph, node):
     # 获取当前节点输出的list
     current_outputs = [output_name]
 
-    graph.add_layer(
-        "prim.dict",
-        inputs=layer_inputs,
-        outputs=layer_outputs,
-        scope_name=scope_name)
+    graph.add_layer("prim.dict",
+                    inputs=layer_inputs,
+                    outputs=layer_outputs,
+                    scope_name=scope_name)
     return current_inputs, current_outputs
 
 
@@ -1780,16 +1799,14 @@ def aten_dim(mapper, graph, node):
     # 获取当前节点输入的list
     current_inputs = list(layer_inputs.values())
 
-    graph.add_layer(
-        "prim.shape",
-        inputs=layer_inputs,
-        outputs=[output_name],
-        scope_name=scope_name)
-    graph.add_layer(
-        "prim.len",
-        inputs={"input": output_name},
-        outputs=[output_name],
-        scope_name=scope_name)
+    graph.add_layer("prim.shape",
+                    inputs=layer_inputs,
+                    outputs=[output_name],
+                    scope_name=scope_name)
+    graph.add_layer("prim.len",
+                    inputs={"input": output_name},
+                    outputs=[output_name],
+                    scope_name=scope_name)
     return current_inputs, current_outputs
 
 
@@ -1820,11 +1837,10 @@ def aten_div(mapper, graph, node):
     # 获取当前节点输入的list
     current_inputs = list(layer_inputs.values())
 
-    graph.add_layer(
-        "prim.div",
-        inputs=layer_inputs,
-        outputs=layer_outputs,
-        scope_name=scope_name)
+    graph.add_layer("prim.div",
+                    inputs=layer_inputs,
+                    outputs=layer_outputs,
+                    scope_name=scope_name)
     return current_inputs, current_outputs
 
 
@@ -1852,12 +1868,11 @@ def aten_dropout(mapper, graph, node):
     # 获取当前节点输入、输出的list
     current_inputs = list(layer_inputs.values())
 
-    graph.add_layer(
-        "paddle.nn.Dropout",
-        inputs=layer_inputs,
-        outputs=layer_outputs,
-        scope_name=scope_name,
-        p=0.0)
+    graph.add_layer("paddle.nn.Dropout",
+                    inputs=layer_inputs,
+                    outputs=layer_outputs,
+                    scope_name=scope_name,
+                    p=0.0)
     return current_inputs, current_outputs
 
 
@@ -1901,12 +1916,11 @@ def aten_embedding(mapper, graph, node):
     # 处理输入4，即%46
     layer_attrs["sparse"] = mapper.attrs[inputs_name[4]]
 
-    graph.add_layer(
-        "paddle.nn.Embedding",
-        inputs=layer_inputs,
-        outputs=layer_outputs,
-        scope_name=scope_name,
-        **layer_attrs)
+    graph.add_layer("paddle.nn.Embedding",
+                    inputs=layer_inputs,
+                    outputs=layer_outputs,
+                    scope_name=scope_name,
+                    **layer_attrs)
     return current_inputs, current_outputs
 
 
@@ -1940,11 +1954,10 @@ def aten_eq(mapper, graph, node):
     y_type = y_value.type()
     # 获取当前节点输入的list
     current_inputs = list(layer_inputs.values())
-    graph.add_layer(
-        "prim.eq",
-        inputs=layer_inputs,
-        outputs=layer_outputs,
-        scope_name=scope_name)
+    graph.add_layer("prim.eq",
+                    inputs=layer_inputs,
+                    outputs=layer_outputs,
+                    scope_name=scope_name)
     return current_inputs, current_outputs
 
 
@@ -1970,11 +1983,10 @@ def aten_erf(mapper, graph, node):
     # 获取当前节点输入、输出的list
     current_inputs = list(layer_inputs.values())
 
-    graph.add_layer(
-        "paddle.erf",
-        inputs=layer_inputs,
-        outputs=layer_outputs,
-        scope_name=scope_name)
+    graph.add_layer("paddle.erf",
+                    inputs=layer_inputs,
+                    outputs=layer_outputs,
+                    scope_name=scope_name)
     return current_inputs, current_outputs
 
 
@@ -2000,11 +2012,10 @@ def aten_exp(mapper, graph, node):
     # 获取当前节点输入、输出的list
     current_inputs = list(layer_inputs.values())
 
-    graph.add_layer(
-        "paddle.exp",
-        inputs=layer_inputs,
-        outputs=layer_outputs,
-        scope_name=scope_name)
+    graph.add_layer("paddle.exp",
+                    inputs=layer_inputs,
+                    outputs=layer_outputs,
+                    scope_name=scope_name)
     return current_inputs, current_outputs
 
 
@@ -2039,12 +2050,11 @@ def aten_expand(mapper, graph, node):
                             current_outputs, scope_name)
         layer_inputs["shape"] = inputs_name[1]
         current_inputs.append(inputs_name[1])
-    graph.add_layer(
-        "paddle.expand",
-        inputs=layer_inputs,
-        outputs=layer_outputs,
-        scope_name=scope_name,
-        **layer_attrs)
+    graph.add_layer("paddle.expand",
+                    inputs=layer_inputs,
+                    outputs=layer_outputs,
+                    scope_name=scope_name,
+                    **layer_attrs)
     return current_inputs, current_outputs
 
 
@@ -2075,56 +2085,48 @@ def aten_expand_as(mapper, graph, node):
     # 获取当前节点输入的list
     current_inputs = list(layer_inputs.values())
 
-    graph.add_layer(
-        "prim.type",
-        inputs={"input": inputs_name[0]},
-        outputs=[inputs_name[0] + "_type"],
-        scope_name=scope_name)
-    graph.add_layer(
-        "prim.eq",
-        inputs={"x": inputs_name[0] + "_type"},
-        outputs=[inputs_name[0] + "_cond"],
-        scope_name=scope_name,
-        y=paddle_dtypes.t_bool)
-    graph.add_layer(
-        "prim.if", {'input': inputs_name[0] + "_cond"},
-        outputs=[inputs_name[0] + "_if1", inputs_name[0]],
-        scope_name=scope_name)
+    graph.add_layer("prim.type",
+                    inputs={"input": inputs_name[0]},
+                    outputs=[inputs_name[0] + "_type"],
+                    scope_name=scope_name)
+    graph.add_layer("prim.eq",
+                    inputs={"x": inputs_name[0] + "_type"},
+                    outputs=[inputs_name[0] + "_cond"],
+                    scope_name=scope_name,
+                    y=paddle_dtypes.t_bool)
+    graph.add_layer("prim.if", {'input': inputs_name[0] + "_cond"},
+                    outputs=[inputs_name[0] + "_if1", inputs_name[0]],
+                    scope_name=scope_name)
     if_layer = graph.layers[list(graph.layers.keys())[-1]]
     block = PaddleGraph(source_type="pytorch", parent_layer=if_layer)
-    block.add_layer(
-        "prim.type",
-        inputs={"input": inputs_name[1]},
-        outputs=[inputs_name[1] + "_type"],
-        scope_name=scope_name)
-    block.add_layer(
-        "paddle.cast",
-        inputs={"x": inputs_name[0]},
-        outputs=[inputs_name[0]],
-        scope_name=scope_name,
-        dtype=inputs_name[1] + "_type")
+    block.add_layer("prim.type",
+                    inputs={"input": inputs_name[1]},
+                    outputs=[inputs_name[1] + "_type"],
+                    scope_name=scope_name)
+    block.add_layer("paddle.cast",
+                    inputs={"x": inputs_name[0]},
+                    outputs=[inputs_name[0]],
+                    scope_name=scope_name,
+                    dtype=inputs_name[1] + "_type")
     if_layer.add_block(block)
     block = PaddleGraph(source_type="pytorch", parent_layer=if_layer)
     if_layer.add_block(block)
     if_layer.inputs["input-0"] = inputs_name[0]
     if_layer.inputs["input-1"] = inputs_name[1]
-    graph.add_layer(
-        "paddle.expand_as",
-        inputs=layer_inputs,
-        outputs=layer_outputs,
-        scope_name=scope_name)
-    graph.add_layer(
-        "prim.if", {'input': inputs_name[0] + "_cond"},
-        outputs=[inputs_name[0] + "_if2", output_name],
-        scope_name=scope_name)
+    graph.add_layer("paddle.expand_as",
+                    inputs=layer_inputs,
+                    outputs=layer_outputs,
+                    scope_name=scope_name)
+    graph.add_layer("prim.if", {'input': inputs_name[0] + "_cond"},
+                    outputs=[inputs_name[0] + "_if2", output_name],
+                    scope_name=scope_name)
     if_layer = graph.layers[list(graph.layers.keys())[-1]]
     block = PaddleGraph(source_type="pytorch", parent_layer=if_layer)
-    block.add_layer(
-        "paddle.cast",
-        inputs={"x": layer_outputs[0]},
-        outputs=copy.deepcopy(layer_outputs),
-        scope_name=scope_name,
-        dtype=string("bool"))
+    block.add_layer("paddle.cast",
+                    inputs={"x": layer_outputs[0]},
+                    outputs=copy.deepcopy(layer_outputs),
+                    scope_name=scope_name,
+                    dtype=string("bool"))
     if_layer.add_block(block)
     block = PaddleGraph(source_type="pytorch", parent_layer=if_layer)
     if_layer.add_block(block)
@@ -2178,12 +2180,11 @@ def aten_eye(mapper, graph, node):
     # 处理倒数第4个输入，即%15
     layer_attrs["dtype"] = dtype_dict[mapper.attrs[inputs_name[-4]]]
 
-    graph.add_layer(
-        "paddle.eye",
-        inputs=layer_inputs,
-        outputs=layer_outputs,
-        scope_name=scope_name,
-        **layer_attrs)
+    graph.add_layer("paddle.eye",
+                    inputs=layer_inputs,
+                    outputs=layer_outputs,
+                    scope_name=scope_name,
+                    **layer_attrs)
     return current_inputs, current_outputs
 
 
@@ -2211,12 +2212,11 @@ def aten_feature_dropout(mapper, graph, node):
     # 获取当前节点输入、输出的list
     current_inputs = list(layer_inputs.values())
 
-    graph.add_layer(
-        "paddle.nn.Dropout",
-        inputs=layer_inputs,
-        outputs=layer_outputs,
-        scope_name=scope_name,
-        p=0.0)
+    graph.add_layer("paddle.nn.Dropout",
+                    inputs=layer_inputs,
+                    outputs=layer_outputs,
+                    scope_name=scope_name,
+                    p=0.0)
     return current_inputs, current_outputs
 
 
@@ -2251,12 +2251,11 @@ def aten_fft_rfftn(mapper, graph, node):
         layer_attrs["axes"] = mapper.attrs[inputs_name[2]]
     if inputs_name[3] in mapper.attrs:
         layer_attrs["norm"] = mapper.attrs[inputs_name[3]]
-    graph.add_layer(
-        "paddle.fft.rfftn",
-        inputs=layer_inputs,
-        outputs=layer_outputs,
-        scope_name=scope_name,
-        **layer_attrs)
+    graph.add_layer("paddle.fft.rfftn",
+                    inputs=layer_inputs,
+                    outputs=layer_outputs,
+                    scope_name=scope_name,
+                    **layer_attrs)
     return current_inputs, current_outputs
 
 
@@ -2291,12 +2290,11 @@ def aten_fft_irfftn(mapper, graph, node):
         layer_attrs["axes"] = mapper.attrs[inputs_name[2]]
     if inputs_name[3] in mapper.attrs:
         layer_attrs["norm"] = mapper.attrs[inputs_name[3]]
-    graph.add_layer(
-        "paddle.fft.irfftn",
-        inputs=layer_inputs,
-        outputs=layer_outputs,
-        scope_name=scope_name,
-        **layer_attrs)
+    graph.add_layer("paddle.fft.irfftn",
+                    inputs=layer_inputs,
+                    outputs=layer_outputs,
+                    scope_name=scope_name,
+                    **layer_attrs)
     return current_inputs, current_outputs
 
 
@@ -2329,12 +2327,11 @@ def aten_flatten(mapper, graph, node):
     # 获取当前节点输入的list
     current_inputs = list(layer_inputs.values())
 
-    graph.add_layer(
-        "paddle.flatten",
-        inputs=layer_inputs,
-        outputs=layer_outputs,
-        scope_name=scope_name,
-        **layer_attrs)
+    graph.add_layer("paddle.flatten",
+                    inputs=layer_inputs,
+                    outputs=layer_outputs,
+                    scope_name=scope_name,
+                    **layer_attrs)
     return current_inputs, current_outputs
 
 
@@ -2360,11 +2357,10 @@ def aten_Float(mapper, graph, node):
     # 获取当前节点输入的list
     current_inputs = list(layer_inputs.values())
 
-    graph.add_layer(
-        "prim.float",
-        inputs=layer_inputs,
-        outputs=layer_outputs,
-        scope_name=scope_name)
+    graph.add_layer("prim.float",
+                    inputs=layer_inputs,
+                    outputs=layer_outputs,
+                    scope_name=scope_name)
     return current_inputs, current_outputs
 
 
@@ -2389,38 +2385,32 @@ def aten_floor(mapper, graph, node):
     layer_inputs["x"] = inputs_name[0]
     # 获取当前节点输入的list
     current_inputs = list(layer_inputs.values())
-    graph.add_layer(
-        "prim.type", {'input': inputs_name[0]},
-        outputs=[inputs_name[0] + "_type"],
-        scope_name=scope_name)
-    graph.add_layer(
-        "prim.str", {'input': inputs_name[0] + "_type"},
-        outputs=[inputs_name[0] + "_type"],
-        scope_name=scope_name)
-    graph.add_layer(
-        "prim.eq",
-        inputs={"x": inputs_name[0] + "_type"},
-        outputs=[inputs_name[0] + "_cond"],
-        scope_name=scope_name,
-        y=paddle_dtypes.t_bool)
-    graph.add_layer(
-        "prim.if", {'input': inputs_name[0] + "_cond"},
-        outputs=[inputs_name[0] + "_if"],
-        scope_name=scope_name)
+    graph.add_layer("prim.type", {'input': inputs_name[0]},
+                    outputs=[inputs_name[0] + "_type"],
+                    scope_name=scope_name)
+    graph.add_layer("prim.str", {'input': inputs_name[0] + "_type"},
+                    outputs=[inputs_name[0] + "_type"],
+                    scope_name=scope_name)
+    graph.add_layer("prim.eq",
+                    inputs={"x": inputs_name[0] + "_type"},
+                    outputs=[inputs_name[0] + "_cond"],
+                    scope_name=scope_name,
+                    y=paddle_dtypes.t_bool)
+    graph.add_layer("prim.if", {'input': inputs_name[0] + "_cond"},
+                    outputs=[inputs_name[0] + "_if"],
+                    scope_name=scope_name)
     if_layer = graph.layers[list(graph.layers.keys())[-1]]
     block = PaddleGraph(source_type="pytorch", parent_layer=if_layer)
-    block.add_layer(
-        "paddle.floor",
-        inputs=copy.deepcopy(layer_inputs),
-        outputs=copy.deepcopy(layer_outputs),
-        scope_name=scope_name)
+    block.add_layer("paddle.floor",
+                    inputs=copy.deepcopy(layer_inputs),
+                    outputs=copy.deepcopy(layer_outputs),
+                    scope_name=scope_name)
     if_layer.add_block(block)
     block = PaddleGraph(source_type="pytorch", parent_layer=if_layer)
-    block.add_layer(
-        "prim.floor",
-        inputs=copy.deepcopy(layer_inputs),
-        outputs=copy.deepcopy(layer_outputs),
-        scope_name=scope_name)
+    block.add_layer("prim.floor",
+                    inputs=copy.deepcopy(layer_inputs),
+                    outputs=copy.deepcopy(layer_outputs),
+                    scope_name=scope_name)
     if_layer.add_block(block)
     if_layer.inputs["input-0"] = inputs_name[0]
     if_layer.outputs.append(output_name)
@@ -2454,11 +2444,10 @@ def aten_floordiv(mapper, graph, node):
     # 获取当前节点输入的list
     current_inputs = list(layer_inputs.values())
 
-    graph.add_layer(
-        "prim.floordiv",
-        inputs=layer_inputs,
-        outputs=layer_outputs,
-        scope_name=scope_name)
+    graph.add_layer("prim.floordiv",
+                    inputs=layer_inputs,
+                    outputs=layer_outputs,
+                    scope_name=scope_name)
     return current_inputs, current_outputs
 
 
@@ -2489,11 +2478,10 @@ def aten_floor_divide(mapper, graph, node):
     # 获取当前节点输入的list
     current_inputs = list(layer_inputs.values())
 
-    graph.add_layer(
-        "prim.floordiv",
-        inputs=layer_inputs,
-        outputs=layer_outputs,
-        scope_name=scope_name)
+    graph.add_layer("prim.floordiv",
+                    inputs=layer_inputs,
+                    outputs=layer_outputs,
+                    scope_name=scope_name)
     return current_inputs, current_outputs
 
 
@@ -2521,11 +2509,10 @@ def aten_format(mapper, graph, node):
     # 获取当前节点输入的list
     current_inputs = list(layer_inputs.values())
 
-    graph.add_layer(
-        "prim.format",
-        inputs=layer_inputs,
-        outputs=layer_outputs,
-        scope_name=scope_name)
+    graph.add_layer("prim.format",
+                    inputs=layer_inputs,
+                    outputs=layer_outputs,
+                    scope_name=scope_name)
     return current_inputs, current_outputs
 
 
@@ -2567,12 +2554,11 @@ def aten_full(mapper, graph, node):
     if mapper.attrs[inputs_name[2]] is not None:
         layer_attrs["dtype"] = dtype_dict[mapper.attrs[inputs_name[2]]]
 
-    graph.add_layer(
-        "paddle.full",
-        inputs=layer_inputs,
-        outputs=layer_outputs,
-        scope_name=scope_name,
-        **layer_attrs)
+    graph.add_layer("paddle.full",
+                    inputs=layer_inputs,
+                    outputs=layer_outputs,
+                    scope_name=scope_name,
+                    **layer_attrs)
     return current_inputs, current_outputs
 
 
@@ -2615,12 +2601,11 @@ def aten_full_like(mapper, graph, node):
     # 处理输入2，即%50，代表dtype
     layer_attrs["dtype"] = dtype_dict[mapper.attrs[inputs_name[2]]]
 
-    graph.add_layer(
-        "paddle.full_like",
-        inputs=layer_inputs,
-        outputs=layer_outputs,
-        scope_name=scope_name,
-        **layer_attrs)
+    graph.add_layer("paddle.full_like",
+                    inputs=layer_inputs,
+                    outputs=layer_outputs,
+                    scope_name=scope_name,
+                    **layer_attrs)
     return current_inputs, current_outputs
 
 
@@ -2656,12 +2641,11 @@ def aten_gather(mapper, graph, node):
     # 获取当前节点输入的list
     current_inputs = list(layer_inputs.values())
 
-    graph.add_layer(
-        "custom_layer:Gather",
-        inputs=layer_inputs,
-        outputs=layer_outputs,
-        scope_name=scope_name,
-        **layer_attrs)
+    graph.add_layer("custom_layer:Gather",
+                    inputs=layer_inputs,
+                    outputs=layer_outputs,
+                    scope_name=scope_name,
+                    **layer_attrs)
     return current_inputs, current_outputs
 
 
@@ -2689,11 +2673,10 @@ def aten_gelu(mapper, graph, node):
     # 获取当前节点输入的list
     current_inputs = list(layer_inputs.values())
 
-    graph.add_layer(
-        "paddle.nn.GELU",
-        inputs=layer_inputs,
-        outputs=layer_outputs,
-        scope_name=scope_name)
+    graph.add_layer("paddle.nn.GELU",
+                    inputs=layer_inputs,
+                    outputs=layer_outputs,
+                    scope_name=scope_name)
     return current_inputs, current_outputs
 
 
@@ -2724,11 +2707,10 @@ def aten___getitem__(mapper, graph, node):
     # 获取当前节点输入的list
     current_inputs = list(layer_inputs.values())
 
-    graph.add_layer(
-        "prim.getitem",
-        inputs=layer_inputs,
-        outputs=layer_outputs,
-        scope_name=scope_name)
+    graph.add_layer("prim.getitem",
+                    inputs=layer_inputs,
+                    outputs=layer_outputs,
+                    scope_name=scope_name)
     return current_inputs, current_outputs
 
 
@@ -2759,11 +2741,10 @@ def aten_gt(mapper, graph, node):
     # 获取当前节点输入的list
     current_inputs = list(layer_inputs.values())
 
-    graph.add_layer(
-        "prim.gt",
-        inputs=layer_inputs,
-        outputs=layer_outputs,
-        scope_name=scope_name)
+    graph.add_layer("prim.gt",
+                    inputs=layer_inputs,
+                    outputs=layer_outputs,
+                    scope_name=scope_name)
     return current_inputs, current_outputs
 
 
@@ -2811,12 +2792,11 @@ def aten_group_norm(mapper, graph, node):
     # process eps
     layer_attrs["epsilon"] = mapper.attrs[inputs_name[4]]
 
-    graph.add_layer(
-        "paddle.nn.GroupNorm",
-        inputs=layer_inputs,
-        outputs=layer_outputs,
-        scope_name=scope_name,
-        **layer_attrs)
+    graph.add_layer("paddle.nn.GroupNorm",
+                    inputs=layer_inputs,
+                    outputs=layer_outputs,
+                    scope_name=scope_name,
+                    **layer_attrs)
     return current_inputs, current_outputs
 
 
@@ -2867,14 +2847,14 @@ def aten_gru(mapper, graph, node):
         if i == 0:
             layer_attrs["hidden_size"] = int(
                 mapper.paddle_params[param_name].shape[0] / 3)
-            layer_attrs["input_size"] = int(mapper.paddle_params[param_name]
-                                            .shape[1])
+            layer_attrs["input_size"] = int(
+                mapper.paddle_params[param_name].shape[1])
         if len(mapper.paddle_params[param_name].shape) > 1:
             part_name = param_name.split("_weight_")[-1]
             mapper.paddle_params["{}.weight_{}".format(
                 op_name, part_name)] = mapper.paddle_params[param_name]
-            new_param_inputs_name.append("{}.weight_{}".format(op_name,
-                                                               part_name))
+            new_param_inputs_name.append("{}.weight_{}".format(
+                op_name, part_name))
         else:
             part_name = param_name.split("_bias_")[-1]
             mapper.paddle_params["{}.bias_{}".format(
@@ -2901,12 +2881,11 @@ def aten_gru(mapper, graph, node):
     batch_first = mapper.attrs[inputs_name[8]]
     if not batch_first:
         layer_attrs["time_major"] = True
-    graph.add_layer(
-        "paddle.nn.GRU",
-        inputs=layer_inputs,
-        outputs=layer_outputs,
-        scope_name=scope_name,
-        **layer_attrs)
+    graph.add_layer("paddle.nn.GRU",
+                    inputs=layer_inputs,
+                    outputs=layer_outputs,
+                    scope_name=scope_name,
+                    **layer_attrs)
     return current_inputs, current_outputs
 
 
@@ -2941,18 +2920,16 @@ def aten_hardtanh(mapper, graph, node):
     layer_attrs["max"] = mapper.attrs[inputs_name[2]]
 
     if layer_attrs["min"] == 0 and layer_attrs["max"] == 6:
-        graph.add_layer(
-            "paddle.nn.ReLU6",
-            inputs=layer_inputs,
-            outputs=layer_outputs,
-            scope_name=scope_name)
+        graph.add_layer("paddle.nn.ReLU6",
+                        inputs=layer_inputs,
+                        outputs=layer_outputs,
+                        scope_name=scope_name)
     else:
-        graph.add_layer(
-            'paddle.nn.Hardtanh',
-            inputs=layer_inputs,
-            outputs=layer_outputs,
-            scope_name=scope_name,
-            **layer_attrs)
+        graph.add_layer('paddle.nn.Hardtanh',
+                        inputs=layer_inputs,
+                        outputs=layer_outputs,
+                        scope_name=scope_name,
+                        **layer_attrs)
     return current_inputs, current_outputs
 
 
@@ -2979,11 +2956,10 @@ def aten_hardsigmoid(mapper, graph, node):
 
     current_inputs = list(layer_inputs.values())
 
-    graph.add_layer(
-        "paddle.nn.Hardsigmoid",
-        inputs=layer_inputs,
-        outputs=layer_outputs,
-        scope_name=scope_name)
+    graph.add_layer("paddle.nn.Hardsigmoid",
+                    inputs=layer_inputs,
+                    outputs=layer_outputs,
+                    scope_name=scope_name)
     return current_inputs, current_outputs
 
 
@@ -3010,11 +2986,10 @@ def aten_hardswish(mapper, graph, node):
 
     current_inputs = list(layer_inputs.values())
 
-    graph.add_layer(
-        "paddle.nn.Hardswish",
-        inputs=layer_inputs,
-        outputs=layer_outputs,
-        scope_name=scope_name)
+    graph.add_layer("paddle.nn.Hardswish",
+                    inputs=layer_inputs,
+                    outputs=layer_outputs,
+                    scope_name=scope_name)
     return current_inputs, current_outputs
 
 
@@ -3045,12 +3020,11 @@ def aten_index(mapper, graph, node):
 
     current_inputs = list(layer_inputs.values())
 
-    graph.add_layer(
-        "prim.getitem",
-        inputs={"list": layer_inputs["x"]},
-        outputs=layer_outputs,
-        scope_name=scope_name,
-        index=layer_inputs["index"])
+    graph.add_layer("prim.getitem",
+                    inputs={"list": layer_inputs["x"]},
+                    outputs=layer_outputs,
+                    scope_name=scope_name,
+                    index=layer_inputs["index"])
     return current_inputs, current_outputs
 
 
@@ -3076,11 +3050,10 @@ def aten_imag(mapper, graph, node):
     # 获取当前节点输入的list
     current_inputs = list(layer_inputs.values())
 
-    graph.add_layer(
-        "paddle.imag",
-        inputs=layer_inputs,
-        outputs=layer_outputs,
-        scope_name=scope_name)
+    graph.add_layer("paddle.imag",
+                    inputs=layer_inputs,
+                    outputs=layer_outputs,
+                    scope_name=scope_name)
     return current_inputs, current_outputs
 
 
@@ -3120,12 +3093,11 @@ def aten_index_select(mapper, graph, node):
     # 获取当前节点输入的list
     current_inputs = list(layer_inputs.values())
 
-    graph.add_layer(
-        "prim.index_select",
-        inputs=layer_inputs,
-        outputs=layer_outputs,
-        scope_name=scope_name,
-        **layer_attrs)
+    graph.add_layer("prim.index_select",
+                    inputs=layer_inputs,
+                    outputs=layer_outputs,
+                    scope_name=scope_name,
+                    **layer_attrs)
     return current_inputs, current_outputs
 
 
@@ -3182,12 +3154,11 @@ def aten_instance_norm(mapper, graph, node):
     # 处理输入7，即%92
     layer_attrs["epsilon"] = mapper.attrs[inputs_name[7]]
 
-    graph.add_layer(
-        "custom_layer:InstanceNorm",
-        inputs=layer_inputs,
-        outputs=layer_outputs,
-        scope_name=scope_name,
-        **layer_attrs)
+    graph.add_layer("custom_layer:InstanceNorm",
+                    inputs=layer_inputs,
+                    outputs=layer_outputs,
+                    scope_name=scope_name,
+                    **layer_attrs)
     return current_inputs, current_outputs
 
 
@@ -3213,11 +3184,10 @@ def aten_Int(mapper, graph, node):
     # 获取当前节点输入的list
     current_inputs = list(layer_inputs.values())
 
-    graph.add_layer(
-        "prim.int",
-        inputs=layer_inputs,
-        outputs=layer_outputs,
-        scope_name=scope_name)
+    graph.add_layer("prim.int",
+                    inputs=layer_inputs,
+                    outputs=layer_outputs,
+                    scope_name=scope_name)
     return current_inputs, current_outputs
 
 
@@ -3248,11 +3218,10 @@ def aten___is__(mapper, graph, node):
     # 获取当前节点输入的list
     current_inputs = list(layer_inputs.values())
 
-    graph.add_layer(
-        "prim.is",
-        inputs=layer_inputs,
-        outputs=layer_outputs,
-        scope_name=scope_name)
+    graph.add_layer("prim.is",
+                    inputs=layer_inputs,
+                    outputs=layer_outputs,
+                    scope_name=scope_name)
     return current_inputs, current_outputs
 
 
@@ -3283,11 +3252,10 @@ def aten___isnot__(mapper, graph, node):
     # 获取当前节点输入的list
     current_inputs = list(layer_inputs.values())
 
-    graph.add_layer(
-        "prim.isnot",
-        inputs=layer_inputs,
-        outputs=layer_outputs,
-        scope_name=scope_name)
+    graph.add_layer("prim.isnot",
+                    inputs=layer_inputs,
+                    outputs=layer_outputs,
+                    scope_name=scope_name)
     return current_inputs, current_outputs
 
 
@@ -3334,12 +3302,11 @@ def aten_layer_norm(mapper, graph, node):
     # 处理输入4，即%70
     layer_attrs["epsilon"] = mapper.attrs[inputs_name[4]]
 
-    graph.add_layer(
-        "paddle.nn.LayerNorm",
-        inputs=layer_inputs,
-        outputs=layer_outputs,
-        scope_name=scope_name,
-        **layer_attrs)
+    graph.add_layer("paddle.nn.LayerNorm",
+                    inputs=layer_inputs,
+                    outputs=layer_outputs,
+                    scope_name=scope_name,
+                    **layer_attrs)
     return current_inputs, current_outputs
 
 
@@ -3370,11 +3337,10 @@ def aten_le(mapper, graph, node):
     # 获取当前节点输入的list
     current_inputs = list(layer_inputs.values())
 
-    graph.add_layer(
-        "prim.le",
-        inputs=layer_inputs,
-        outputs=layer_outputs,
-        scope_name=scope_name)
+    graph.add_layer("prim.le",
+                    inputs=layer_inputs,
+                    outputs=layer_outputs,
+                    scope_name=scope_name)
     return current_inputs, current_outputs
 
 
@@ -3405,12 +3371,11 @@ def aten_leaky_relu(mapper, graph, node):
     # 处理输入1，即%1570
     layer_attrs["negative_slope"] = mapper.attrs[inputs_name[1]]
 
-    graph.add_layer(
-        "paddle.nn.LeakyReLU",
-        inputs=layer_inputs,
-        outputs=layer_outputs,
-        scope_name=scope_name,
-        **layer_attrs)
+    graph.add_layer("paddle.nn.LeakyReLU",
+                    inputs=layer_inputs,
+                    outputs=layer_outputs,
+                    scope_name=scope_name,
+                    **layer_attrs)
     return current_inputs, current_outputs
 
 
@@ -3436,11 +3401,10 @@ def aten_len(mapper, graph, node):
     # 获取当前节点输入的list
     current_inputs = list(layer_inputs.values())
 
-    graph.add_layer(
-        "prim.len",
-        inputs=layer_inputs,
-        outputs=layer_outputs,
-        scope_name=scope_name)
+    graph.add_layer("prim.len",
+                    inputs=layer_inputs,
+                    outputs=layer_outputs,
+                    scope_name=scope_name)
     return current_inputs, current_outputs
 
 
@@ -3471,21 +3435,36 @@ def aten_linear(mapper, graph, node):
                         scope_name)
     layer_inputs["y"] = inputs_name[1]
     layer_attrs["transpose_y"] = True
-    graph.add_layer(
-        "paddle.matmul",
-        inputs=layer_inputs,
-        outputs=layer_outputs,
-        scope_name=scope_name,
-        **layer_attrs)
+    graph.add_layer("paddle.matmul",
+                    inputs=layer_inputs,
+                    outputs=layer_outputs,
+                    scope_name=scope_name,
+                    **layer_attrs)
     if len(inputs_name) == 3:
-        mapper._check_input(graph, inputs_node[2], inputs_name[2],
-                            current_outputs, scope_name)
-        graph.add_layer(
-            "paddle.add",
-            inputs={"x": output_name,
-                    "y": inputs_name[2]},
-            outputs=layer_outputs,
-            scope_name=scope_name)
+        # make `bias` dtype like `weight`, and shape is `1` for broadcast
+        if (inputs_name[2] not in mapper.pytorch_params
+                and inputs_name[1] in mapper.pytorch_params):
+            param = mapper.pytorch_params[inputs_name[1]]
+            dtype = string(str(param.dtype))
+            shape = (1, )
+            mapper._check_input(graph,
+                                inputs_node[2],
+                                inputs_name[2],
+                                current_outputs,
+                                scope_name,
+                                dtype=dtype,
+                                shape=shape)
+        else:
+            mapper._check_input(graph, inputs_node[2], inputs_name[2],
+                                current_outputs, scope_name)
+
+        graph.add_layer("paddle.add",
+                        inputs={
+                            "x": output_name,
+                            "y": inputs_name[2]
+                        },
+                        outputs=layer_outputs,
+                        scope_name=scope_name)
     current_inputs = list(layer_inputs.values())
 
     return current_inputs, current_outputs
@@ -3513,11 +3492,10 @@ def aten_log(mapper, graph, node):
     # 获取当前节点输入的list
     current_inputs = list(layer_inputs.values())
 
-    graph.add_layer(
-        "paddle.log",
-        inputs=layer_inputs,
-        outputs=layer_outputs,
-        scope_name=scope_name)
+    graph.add_layer("paddle.log",
+                    inputs=layer_inputs,
+                    outputs=layer_outputs,
+                    scope_name=scope_name)
     return current_inputs, current_outputs
 
 
@@ -3557,12 +3535,11 @@ def aten_log_softmax(mapper, graph, node):
     # 获取当前节点输入的list
     current_inputs = list(layer_inputs.values())
 
-    graph.add_layer(
-        "paddle.nn.functional.log_softmax",
-        inputs=layer_inputs,
-        outputs=layer_outputs,
-        scope_name=scope_name,
-        **layer_attrs)
+    graph.add_layer("paddle.nn.functional.log_softmax",
+                    inputs=layer_inputs,
+                    outputs=layer_outputs,
+                    scope_name=scope_name,
+                    **layer_attrs)
     return current_inputs, current_outputs
 
 
@@ -3614,14 +3591,14 @@ def aten_lstm(mapper, graph, node):
         if i == 0:
             layer_attrs["hidden_size"] = int(
                 mapper.paddle_params[param_name].shape[0] / 4)
-            layer_attrs["input_size"] = int(mapper.paddle_params[param_name]
-                                            .shape[1])
+            layer_attrs["input_size"] = int(
+                mapper.paddle_params[param_name].shape[1])
         if len(mapper.paddle_params[param_name].shape) > 1:
             part_name = param_name.split("_weight_")[-1]
             mapper.paddle_params["{}.weight_{}".format(
                 op_name, part_name)] = mapper.paddle_params[param_name]
-            new_param_inputs_name.append("{}.weight_{}".format(op_name,
-                                                               part_name))
+            new_param_inputs_name.append("{}.weight_{}".format(
+                op_name, part_name))
         else:
             part_name = param_name.split("_bias_")[-1]
             mapper.paddle_params["{}.bias_{}".format(
@@ -3648,12 +3625,11 @@ def aten_lstm(mapper, graph, node):
     batch_first = mapper.attrs[inputs_name[8]]
     if not batch_first:
         layer_attrs["time_major"] = True
-    graph.add_layer(
-        "paddle.nn.LSTM",
-        inputs=layer_inputs,
-        outputs=layer_outputs,
-        scope_name=scope_name,
-        **layer_attrs)
+    graph.add_layer("paddle.nn.LSTM",
+                    inputs=layer_inputs,
+                    outputs=layer_outputs,
+                    scope_name=scope_name,
+                    **layer_attrs)
     return current_inputs, current_outputs
 
 
@@ -3684,11 +3660,10 @@ def aten_lt(mapper, graph, node):
     # 获取当前节点输入的list
     current_inputs = list(layer_inputs.values())
 
-    graph.add_layer(
-        "prim.lt",
-        inputs=layer_inputs,
-        outputs=layer_outputs,
-        scope_name=scope_name)
+    graph.add_layer("prim.lt",
+                    inputs=layer_inputs,
+                    outputs=layer_outputs,
+                    scope_name=scope_name)
     return current_inputs, current_outputs
 
 
@@ -3716,11 +3691,10 @@ def aten_masked_fill(mapper, graph, node):
                         scope_name)
     current_inputs.append(inputs_name[0])
     # paddle.full
-    graph.add_layer(
-        "prim.shape",
-        inputs={"input": inputs_name[0]},
-        outputs=[inputs_name[0] + "_shape"],
-        scope_name=scope_name)
+    graph.add_layer("prim.shape",
+                    inputs={"input": inputs_name[0]},
+                    outputs=[inputs_name[0] + "_shape"],
+                    scope_name=scope_name)
     layer_full_inputs["shape"] = inputs_name[0] + "_shape"
     if inputs_name[2] in mapper.attrs:
         layer_full_attrs["fill_value"] = mapper.attrs[inputs_name[2]]
@@ -3730,27 +3704,24 @@ def aten_masked_fill(mapper, graph, node):
         layer_full_inputs["fill_value"] = inputs_name[2]
         current_inputs.append(inputs_name[2])
 
-    graph.add_layer(
-        "prim.type",
-        inputs={"input": inputs_name[0]},
-        outputs=[inputs_name[0] + "_type"],
-        scope_name=scope_name)
+    graph.add_layer("prim.type",
+                    inputs={"input": inputs_name[0]},
+                    outputs=[inputs_name[0] + "_type"],
+                    scope_name=scope_name)
     layer_full_attrs["dtype"] = inputs_name[0] + "_type"
-    graph.add_layer(
-        "paddle.full",
-        inputs=layer_full_inputs,
-        outputs=[inputs_name[0] + "_full"],
-        scope_name=scope_name,
-        **layer_full_attrs)
+    graph.add_layer("paddle.full",
+                    inputs=layer_full_inputs,
+                    outputs=[inputs_name[0] + "_full"],
+                    scope_name=scope_name,
+                    **layer_full_attrs)
     # paddle.where
     layer_where_inputs["condition"] = inputs_name[1]
     layer_where_inputs["x"] = inputs_name[0] + "_full"
     layer_where_inputs["y"] = inputs_name[0]
-    graph.add_layer(
-        "paddle.where",
-        inputs=layer_where_inputs,
-        outputs=layer_outputs,
-        scope_name=scope_name)
+    graph.add_layer("paddle.where",
+                    inputs=layer_where_inputs,
+                    outputs=layer_outputs,
+                    scope_name=scope_name)
     return current_inputs, current_outputs
 
 
@@ -3782,11 +3753,10 @@ def aten_max(mapper, graph, node):
         layer_inputs["y"] = inputs_name[1]
         # 获取当前节点输入的list
         current_inputs = list(layer_inputs.values())
-        graph.add_layer(
-            "paddle.maximum",
-            inputs=layer_inputs,
-            outputs=layer_outputs,
-            scope_name=scope_name)
+        graph.add_layer("paddle.maximum",
+                        inputs=layer_inputs,
+                        outputs=layer_outputs,
+                        scope_name=scope_name)
     else:
         pass
     return current_inputs, current_outputs
@@ -3829,12 +3799,11 @@ def aten_max_pool1d(mapper, graph, node):
     # 处理输入5，即%19
     layer_attrs["ceil_mode"] = mapper.attrs[inputs_name[5]]
 
-    graph.add_layer(
-        "paddle.nn.MaxPool1D",
-        inputs=layer_inputs,
-        outputs=layer_outputs,
-        scope_name=scope_name,
-        **layer_attrs)
+    graph.add_layer("paddle.nn.MaxPool1D",
+                    inputs=layer_inputs,
+                    outputs=layer_outputs,
+                    scope_name=scope_name,
+                    **layer_attrs)
     return current_inputs, current_outputs
 
 
@@ -3877,24 +3846,22 @@ def aten_max_pool2d(mapper, graph, node):
     layer_attrs["padding"] = mapper.attrs[inputs_name[3]]
     layer_attrs_tmp["pool_padding"] = mapper.attrs[inputs_name[3]]
     # 处理输入4，即%22
-    graph.add_layer(
-        "prim.assert",
-        inputs={},
-        outputs=[inputs_name[4] + "_assert"],
-        scope_name=scope_name + "_assert",
-        type="eq",
-        key=mapper.attrs[inputs_name[4]],
-        value=[1, [1, 1]])
+    graph.add_layer("prim.assert",
+                    inputs={},
+                    outputs=[inputs_name[4] + "_assert"],
+                    scope_name=scope_name + "_assert",
+                    type="eq",
+                    key=mapper.attrs[inputs_name[4]],
+                    value=[1, [1, 1]])
     # 处理输入5，即%19
     layer_attrs["ceil_mode"] = mapper.attrs[inputs_name[5]]
     layer_attrs_tmp["ceil_mode"] = mapper.attrs[inputs_name[5]]
 
-    graph.add_layer(
-        "paddle.nn.MaxPool2D",
-        inputs=layer_inputs,
-        outputs=layer_outputs,
-        scope_name=scope_name,
-        **layer_attrs)
+    graph.add_layer("paddle.nn.MaxPool2D",
+                    inputs=layer_inputs,
+                    outputs=layer_outputs,
+                    scope_name=scope_name,
+                    **layer_attrs)
     return current_inputs, current_outputs
 
 
@@ -3925,11 +3892,10 @@ def aten_matmul(mapper, graph, node):
     # 获取当前节点输入的list
     current_inputs = list(layer_inputs.values())
 
-    graph.add_layer(
-        "paddle.matmul",
-        inputs=layer_inputs,
-        outputs=layer_outputs,
-        scope_name=scope_name)
+    graph.add_layer("paddle.matmul",
+                    inputs=layer_inputs,
+                    outputs=layer_outputs,
+                    scope_name=scope_name)
     return current_inputs, current_outputs
 
 
@@ -3961,11 +3927,10 @@ def aten_min(mapper, graph, node):
         layer_inputs["y"] = inputs_name[1]
         # 获取当前节点输入的list
         current_inputs = list(layer_inputs.values())
-        graph.add_layer(
-            "paddle.minimum",
-            inputs=layer_inputs,
-            outputs=layer_outputs,
-            scope_name=scope_name)
+        graph.add_layer("paddle.minimum",
+                        inputs=layer_inputs,
+                        outputs=layer_outputs,
+                        scope_name=scope_name)
     else:
         pass
     return current_inputs, current_outputs
@@ -4012,12 +3977,11 @@ def aten_mean(mapper, graph, node):
         layer_inputs["keepdim"] = inputs_name[2]
         current_inputs.append(inputs_name[2])
 
-    graph.add_layer(
-        "paddle.mean",
-        inputs=layer_inputs,
-        outputs=layer_outputs,
-        scope_name=scope_name,
-        **layer_attrs)
+    graph.add_layer("paddle.mean",
+                    inputs=layer_inputs,
+                    outputs=layer_outputs,
+                    scope_name=scope_name,
+                    **layer_attrs)
     return current_inputs, current_outputs
 
 
@@ -4044,11 +4008,10 @@ def aten_meshgrid(mapper, graph, node):
     current_inputs = layer_inputs.values()
     current_outputs = layer_outputs
 
-    graph.add_layer(
-        "paddle.meshgrid",
-        inputs=layer_inputs,
-        outputs=layer_outputs,
-        scope_name=scope_name)
+    graph.add_layer("paddle.meshgrid",
+                    inputs=layer_inputs,
+                    outputs=layer_outputs,
+                    scope_name=scope_name)
     return current_inputs, current_outputs
 
 
@@ -4080,11 +4043,10 @@ def aten_mul(mapper, graph, node):
     current_inputs = list(layer_inputs.values())
     current_outputs = layer_outputs
 
-    graph.add_layer(
-        "prim.mul",
-        inputs=layer_inputs,
-        outputs=layer_outputs,
-        scope_name=scope_name)
+    graph.add_layer("prim.mul",
+                    inputs=layer_inputs,
+                    outputs=layer_outputs,
+                    scope_name=scope_name)
     return current_inputs, current_outputs
 
 
@@ -4115,11 +4077,10 @@ def aten_ne(mapper, graph, node):
     # 获取当前节点输入的list
     current_inputs = list(layer_inputs.values())
 
-    graph.add_layer(
-        "prim.ne",
-        inputs=layer_inputs,
-        outputs=layer_outputs,
-        scope_name=scope_name)
+    graph.add_layer("prim.ne",
+                    inputs=layer_inputs,
+                    outputs=layer_outputs,
+                    scope_name=scope_name)
     return current_inputs, current_outputs
 
 
@@ -4145,11 +4106,10 @@ def aten_neg(mapper, graph, node):
     # 获取当前节点输入的list
     current_inputs = list(layer_inputs.values())
 
-    graph.add_layer(
-        "prim.neg",
-        inputs=layer_inputs,
-        outputs=layer_outputs,
-        scope_name=scope_name)
+    graph.add_layer("prim.neg",
+                    inputs=layer_inputs,
+                    outputs=layer_outputs,
+                    scope_name=scope_name)
     return current_inputs, current_outputs
 
 
@@ -4194,12 +4154,11 @@ def aten_frobenius_norm(mapper, graph, node):
         layer_inputs["keepdim"] = inputs_name[2]
         current_inputs.append(inputs_name[2])
 
-    graph.add_layer(
-        "paddle.norm",
-        inputs=layer_inputs,
-        outputs=layer_outputs,
-        scope_name=scope_name,
-        **layer_attrs)
+    graph.add_layer("paddle.norm",
+                    inputs=layer_inputs,
+                    outputs=layer_outputs,
+                    scope_name=scope_name,
+                    **layer_attrs)
     return current_inputs, current_outputs
 
 
@@ -4252,12 +4211,11 @@ def aten_norm(mapper, graph, node):
         layer_inputs["keepdim"] = inputs_name[3]
         current_inputs.append(inputs_name[3])
 
-    graph.add_layer(
-        "paddle.norm",
-        inputs=layer_inputs,
-        outputs=layer_outputs,
-        scope_name=scope_name,
-        **layer_attrs)
+    graph.add_layer("paddle.norm",
+                    inputs=layer_inputs,
+                    outputs=layer_outputs,
+                    scope_name=scope_name,
+                    **layer_attrs)
     return current_inputs, current_outputs
 
 
@@ -4283,11 +4241,10 @@ def aten___not__(mapper, graph, node):
     # 获取当前节点输入的list
     current_inputs = list(layer_inputs.values())
 
-    graph.add_layer(
-        "prim.not",
-        inputs=layer_inputs,
-        outputs=layer_outputs,
-        scope_name=scope_name)
+    graph.add_layer("prim.not",
+                    inputs=layer_inputs,
+                    outputs=layer_outputs,
+                    scope_name=scope_name)
     return current_inputs, current_outputs
 
 
@@ -4323,12 +4280,11 @@ def aten_ones(mapper, graph, node):
     # 处理输入1，即%8，代表dtype
     layer_attrs["dtype"] = dtype_dict[mapper.attrs[inputs_name[1]]]
 
-    graph.add_layer(
-        "paddle.ones",
-        inputs=layer_inputs,
-        outputs=layer_outputs,
-        scope_name=scope_name,
-        **layer_attrs)
+    graph.add_layer("paddle.ones",
+                    inputs=layer_inputs,
+                    outputs=layer_outputs,
+                    scope_name=scope_name,
+                    **layer_attrs)
     return current_inputs, current_outputs
 
 
@@ -4364,12 +4320,11 @@ def aten_permute(mapper, graph, node):
         layer_inputs["perm"] = inputs_name[1]
         current_inputs.append(inputs_name[1])
 
-    graph.add_layer(
-        "paddle.transpose",
-        inputs=layer_inputs,
-        outputs=layer_outputs,
-        scope_name=scope_name,
-        **layer_attrs)
+    graph.add_layer("paddle.transpose",
+                    inputs=layer_inputs,
+                    outputs=layer_outputs,
+                    scope_name=scope_name,
+                    **layer_attrs)
     return current_inputs, current_outputs
 
 
@@ -4398,12 +4353,11 @@ def aten_pixel_shuffle(mapper, graph, node):
     # 处理输入1，即%726
     layer_attrs["upscale_factor"] = mapper.attrs[inputs_name[1]]
 
-    graph.add_layer(
-        "paddle.nn.functional.pixel_shuffle",
-        inputs=layer_inputs,
-        outputs=layer_outputs,
-        scope_name=scope_name,
-        **layer_attrs)
+    graph.add_layer("paddle.nn.functional.pixel_shuffle",
+                    inputs=layer_inputs,
+                    outputs=layer_outputs,
+                    scope_name=scope_name,
+                    **layer_attrs)
     return current_inputs, current_outputs
 
 
@@ -4438,12 +4392,11 @@ def aten_pow(mapper, graph, node):
         layer_inputs["y"] = inputs_name[1]
         current_inputs.append(inputs_name[1])
 
-    graph.add_layer(
-        "paddle.pow",
-        inputs=layer_inputs,
-        outputs=layer_outputs,
-        scope_name=scope_name,
-        **layer_attrs)
+    graph.add_layer("paddle.pow",
+                    inputs=layer_inputs,
+                    outputs=layer_outputs,
+                    scope_name=scope_name,
+                    **layer_attrs)
     return current_inputs, current_outputs
 
 
@@ -4474,12 +4427,11 @@ def aten_prelu(mapper, graph, node):
     # 获取当前节点输入的list
     current_inputs = list(layer_inputs.values())
 
-    graph.add_layer(
-        "paddle.nn.PReLU",
-        inputs=layer_inputs,
-        outputs=layer_outputs,
-        scope_name=scope_name,
-        num_parameters=weight.shape[0])
+    graph.add_layer("paddle.nn.PReLU",
+                    inputs=layer_inputs,
+                    outputs=layer_outputs,
+                    scope_name=scope_name,
+                    num_parameters=weight.shape[0])
     return current_inputs, current_outputs
 
 
@@ -4515,12 +4467,11 @@ def aten_rand(mapper, graph, node):
     # deal with dtype
     layer_attrs["dtype"] = dtype_dict[mapper.attrs[inputs_name[1]]]
 
-    graph.add_layer(
-        "paddle.rand",
-        inputs=layer_inputs,
-        outputs=layer_outputs,
-        scope_name=scope_name,
-        **layer_attrs)
+    graph.add_layer("paddle.rand",
+                    inputs=layer_inputs,
+                    outputs=layer_outputs,
+                    scope_name=scope_name,
+                    **layer_attrs)
     return current_inputs, current_outputs
 
 
@@ -4556,12 +4507,11 @@ def aten_randn(mapper, graph, node):
     # deal with dtype
     layer_attrs["dtype"] = dtype_dict[mapper.attrs[inputs_name[1]]]
 
-    graph.add_layer(
-        "paddle.randn",
-        inputs=layer_inputs,
-        outputs=layer_outputs,
-        scope_name=scope_name,
-        **layer_attrs)
+    graph.add_layer("paddle.randn",
+                    inputs=layer_inputs,
+                    outputs=layer_outputs,
+                    scope_name=scope_name,
+                    **layer_attrs)
     return current_inputs, current_outputs
 
 
@@ -4587,11 +4537,10 @@ def aten_real(mapper, graph, node):
     # 获取当前节点输入的list
     current_inputs = list(layer_inputs.values())
 
-    graph.add_layer(
-        "paddle.real",
-        inputs=layer_inputs,
-        outputs=layer_outputs,
-        scope_name=scope_name)
+    graph.add_layer("paddle.real",
+                    inputs=layer_inputs,
+                    outputs=layer_outputs,
+                    scope_name=scope_name)
     return current_inputs, current_outputs
 
 
@@ -4632,12 +4581,11 @@ def aten_reflection_pad1d(mapper, graph, node):
         layer_attrs["padding"] = list(mapper.pytorch_params[inputs_name[0]])
     layer_attrs["mode"] = string("reflect")
 
-    graph.add_layer(
-        "paddle.nn.Pad1D",
-        inputs=layer_inputs,
-        outputs=layer_outputs,
-        scope_name=scope_name,
-        **layer_attrs)
+    graph.add_layer("paddle.nn.Pad1D",
+                    inputs=layer_inputs,
+                    outputs=layer_outputs,
+                    scope_name=scope_name,
+                    **layer_attrs)
     return current_inputs, current_outputs
 
 
@@ -4678,12 +4626,11 @@ def aten_reflection_pad2d(mapper, graph, node):
         layer_attrs["padding"] = list(mapper.pytorch_params[inputs_name[0]])
     layer_attrs["mode"] = string("reflect")
 
-    graph.add_layer(
-        "paddle.nn.Pad2D",
-        inputs=layer_inputs,
-        outputs=layer_outputs,
-        scope_name=scope_name,
-        **layer_attrs)
+    graph.add_layer("paddle.nn.Pad2D",
+                    inputs=layer_inputs,
+                    outputs=layer_outputs,
+                    scope_name=scope_name,
+                    **layer_attrs)
     return current_inputs, current_outputs
 
 
@@ -4711,11 +4658,10 @@ def aten_relu(mapper, graph, node):
     # 获取当前节点输入的list
     current_inputs = list(layer_inputs.values())
 
-    graph.add_layer(
-        "paddle.nn.ReLU",
-        inputs=layer_inputs,
-        outputs=layer_outputs,
-        scope_name=scope_name)
+    graph.add_layer("paddle.nn.ReLU",
+                    inputs=layer_inputs,
+                    outputs=layer_outputs,
+                    scope_name=scope_name)
     return current_inputs, current_outputs
 
 
@@ -4743,11 +4689,10 @@ def aten_relu6(mapper, graph, node):
     # 获取当前节点输入的list
     current_inputs = list(layer_inputs.values())
 
-    graph.add_layer(
-        "paddle.nn.ReLU6",
-        inputs=layer_inputs,
-        outputs=layer_outputs,
-        scope_name=scope_name)
+    graph.add_layer("paddle.nn.ReLU6",
+                    inputs=layer_inputs,
+                    outputs=layer_outputs,
+                    scope_name=scope_name)
     return current_inputs, current_outputs
 
 
@@ -4778,11 +4723,10 @@ def aten_remainder(mapper, graph, node):
     # 获取当前节点输入、输出的list
     current_inputs = list(layer_inputs.values())
 
-    graph.add_layer(
-        "prim.remainder",
-        inputs=layer_inputs,
-        outputs=layer_outputs,
-        scope_name=scope_name)
+    graph.add_layer("prim.remainder",
+                    inputs=layer_inputs,
+                    outputs=layer_outputs,
+                    scope_name=scope_name)
     return current_inputs, current_outputs
 
 
@@ -4818,12 +4762,11 @@ def aten_repeat(mapper, graph, node):
         layer_inputs["repeat_times"] = inputs_name[1]
         current_inputs.append(inputs_name[1])
 
-    graph.add_layer(
-        "paddle.tile",
-        inputs=layer_inputs,
-        outputs=layer_outputs,
-        scope_name=scope_name,
-        **layer_attrs)
+    graph.add_layer("paddle.tile",
+                    inputs=layer_inputs,
+                    outputs=layer_outputs,
+                    scope_name=scope_name,
+                    **layer_attrs)
     return current_inputs, current_outputs
 
 
@@ -4860,39 +4803,35 @@ def aten_repeat_interleave(mapper, graph, node):
         layer_inputs["repeat_times"] = inputs_name[1]
         current_inputs.append(inputs_name[1])
 
-    graph.add_layer(
-        "paddle.tile",
-        inputs=layer_inputs,
-        outputs=layer_outputs,
-        scope_name=scope_name,
-        **layer_attrs)
+    graph.add_layer("paddle.tile",
+                    inputs=layer_inputs,
+                    outputs=layer_outputs,
+                    scope_name=scope_name,
+                    **layer_attrs)
 
     layer_attrs_reshape = {}
     layer_attrs_reshape["shape"] = [0, int(mapper.attrs[inputs_name[1]]), -1]
-    graph.add_layer(
-        "paddle.reshape",
-        inputs={"x": layer_outputs[0]},
-        outputs=[layer_outputs[0] + "_reshape"],
-        scope_name=scope_name,
-        **layer_attrs_reshape)
+    graph.add_layer("paddle.reshape",
+                    inputs={"x": layer_outputs[0]},
+                    outputs=[layer_outputs[0] + "_reshape"],
+                    scope_name=scope_name,
+                    **layer_attrs_reshape)
 
     layer_attrs_transpose = {}
     layer_attrs_transpose["perm"] = [0, 2, 1]
-    graph.add_layer(
-        "paddle.transpose",
-        inputs={"x": layer_outputs[0] + "_reshape"},
-        outputs=[layer_outputs[0] + "_transpose"],
-        scope_name=scope_name,
-        **layer_attrs_transpose)
+    graph.add_layer("paddle.transpose",
+                    inputs={"x": layer_outputs[0] + "_reshape"},
+                    outputs=[layer_outputs[0] + "_transpose"],
+                    scope_name=scope_name,
+                    **layer_attrs_transpose)
 
     layer_attrs_reshape = {}
     layer_attrs_reshape["shape"] = [0, -1]
-    graph.add_layer(
-        "paddle.reshape",
-        inputs={"x": layer_outputs[0] + "_transpose"},
-        outputs=layer_outputs,
-        scope_name=scope_name,
-        **layer_attrs_reshape)
+    graph.add_layer("paddle.reshape",
+                    inputs={"x": layer_outputs[0] + "_transpose"},
+                    outputs=layer_outputs,
+                    scope_name=scope_name,
+                    **layer_attrs_reshape)
 
     return current_inputs, current_outputs
 
@@ -4923,12 +4862,11 @@ def aten_replication_pad1d(mapper, graph, node):
     layer_attrs["mode"] = string("replicate")
     current_inputs = list(layer_inputs.values())
 
-    graph.add_layer(
-        "paddle.nn.Pad1D",
-        inputs=layer_inputs,
-        outputs=layer_outputs,
-        scope_name=scope_name,
-        **layer_attrs)
+    graph.add_layer("paddle.nn.Pad1D",
+                    inputs=layer_inputs,
+                    outputs=layer_outputs,
+                    scope_name=scope_name,
+                    **layer_attrs)
 
     return current_inputs, current_outputs
 
@@ -4965,12 +4903,11 @@ def aten_reshape(mapper, graph, node):
         layer_inputs["shape"] = inputs_name[1]
         current_inputs.append(inputs_name[1])
 
-    graph.add_layer(
-        "paddle.reshape",
-        inputs=layer_inputs,
-        outputs=layer_outputs,
-        scope_name=scope_name,
-        **layer_attrs)
+    graph.add_layer("paddle.reshape",
+                    inputs=layer_inputs,
+                    outputs=layer_outputs,
+                    scope_name=scope_name,
+                    **layer_attrs)
     return current_inputs, current_outputs
 
 
@@ -5015,12 +4952,11 @@ def aten_roll(mapper, graph, node):
         layer_inputs["axis"] = inputs_name[2]
         current_inputs.append(inputs_name[2])
 
-    graph.add_layer(
-        "paddle.roll",
-        inputs=layer_inputs,
-        outputs=layer_outputs,
-        scope_name=scope_name,
-        **layer_attrs)
+    graph.add_layer("paddle.roll",
+                    inputs=layer_inputs,
+                    outputs=layer_outputs,
+                    scope_name=scope_name,
+                    **layer_attrs)
     return current_inputs, current_outputs
 
 
@@ -5056,11 +4992,10 @@ def aten_rsub(mapper, graph, node):
     # 获取当前节点输入的list
     current_inputs = list(layer_inputs.values())
 
-    graph.add_layer(
-        "prim.rsub",
-        inputs=layer_inputs,
-        outputs=layer_outputs,
-        scope_name=scope_name)
+    graph.add_layer("prim.rsub",
+                    inputs=layer_inputs,
+                    outputs=layer_outputs,
+                    scope_name=scope_name)
     return current_inputs, current_outputs
 
 
@@ -5086,11 +5021,10 @@ def aten_rsqrt(mapper, graph, node):
 
     current_inputs = list(layer_inputs.values())
 
-    graph.add_layer(
-        "paddle.rsqrt",
-        inputs=layer_inputs,
-        outputs=layer_outputs,
-        scope_name=scope_name)
+    graph.add_layer("paddle.rsqrt",
+                    inputs=layer_inputs,
+                    outputs=layer_outputs,
+                    scope_name=scope_name)
     return current_inputs, current_outputs
 
 
@@ -5118,11 +5052,10 @@ def aten_ScalarImplicit(mapper, graph, node):
     # 获取当前节点输入的list
     current_inputs = list(layer_inputs.values())
     if str(input_type) == "Tensor":
-        graph.add_layer(
-            "prim.equal",
-            inputs=layer_inputs,
-            outputs=layer_outputs,
-            scope_name=scope_name)
+        graph.add_layer("prim.equal",
+                        inputs=layer_inputs,
+                        outputs=layer_outputs,
+                        scope_name=scope_name)
     else:
         raise Exception(
             "The input type {} of aten::ScalarImplicit is not implemented yet!"
@@ -5161,12 +5094,11 @@ def aten_select(mapper, graph, node):
     # 获取当前节点输入的list
     current_inputs = list(layer_inputs.values())
 
-    graph.add_layer(
-        "prim.select",
-        inputs=layer_inputs,
-        outputs=layer_outputs,
-        scope_name=scope_name,
-        **layer_attrs)
+    graph.add_layer("prim.select",
+                    inputs=layer_inputs,
+                    outputs=layer_outputs,
+                    scope_name=scope_name,
+                    **layer_attrs)
     return current_inputs, current_outputs
 
 
@@ -5199,8 +5131,10 @@ def aten__set_item(mapper, graph, node):
     # 获取当前节点输入的list
     current_inputs = list(layer_inputs.values())
 
-    graph.add_layer(
-        "prim.set_item", inputs=layer_inputs, outputs=[], scope_name=scope_name)
+    graph.add_layer("prim.set_item",
+                    inputs=layer_inputs,
+                    outputs=[],
+                    scope_name=scope_name)
     return current_inputs, current_outputs
 
 
@@ -5227,11 +5161,10 @@ def aten_sigmoid(mapper, graph, node):
     # 获取当前节点输入、输出的list
     current_inputs = list(layer_inputs.values())
 
-    graph.add_layer(
-        "paddle.nn.Sigmoid",
-        inputs=layer_inputs,
-        outputs=layer_outputs,
-        scope_name=scope_name)
+    graph.add_layer("paddle.nn.Sigmoid",
+                    inputs=layer_inputs,
+                    outputs=layer_outputs,
+                    scope_name=scope_name)
     return current_inputs, current_outputs
 
 
@@ -5259,11 +5192,10 @@ def aten_silu(mapper, graph, node):
     # 获取当前节点输入的list
     current_inputs = list(layer_inputs.values())
 
-    graph.add_layer(
-        "paddle.nn.Silu",
-        inputs=layer_inputs,
-        outputs=layer_outputs,
-        scope_name=scope_name)
+    graph.add_layer("paddle.nn.Silu",
+                    inputs=layer_inputs,
+                    outputs=layer_outputs,
+                    scope_name=scope_name)
     return current_inputs, current_outputs
 
 
@@ -5289,11 +5221,10 @@ def aten_sin(mapper, graph, node):
     # 获取当前节点输入、输出的list
     current_inputs = list(layer_inputs.values())
 
-    graph.add_layer(
-        "paddle.sin",
-        inputs=layer_inputs,
-        outputs=layer_outputs,
-        scope_name=scope_name)
+    graph.add_layer("paddle.sin",
+                    inputs=layer_inputs,
+                    outputs=layer_outputs,
+                    scope_name=scope_name)
     return current_inputs, current_outputs
 
 
@@ -5329,19 +5260,17 @@ def aten_size(mapper, graph, node):
                                 current_outputs, scope_name)
             layer_inputs["dim"] = inputs_name[1]
             current_inputs.append(inputs_name[1])
-        graph.add_layer(
-            "prim.shape_dim",
-            inputs=layer_inputs,
-            outputs=layer_outputs,
-            scope_name=scope_name,
-            **layer_attrs)
+        graph.add_layer("prim.shape_dim",
+                        inputs=layer_inputs,
+                        outputs=layer_outputs,
+                        scope_name=scope_name,
+                        **layer_attrs)
         return current_inputs, current_outputs
 
-    graph.add_layer(
-        "prim.shape",
-        inputs=layer_inputs,
-        outputs=layer_outputs,
-        scope_name=scope_name)
+    graph.add_layer("prim.shape",
+                    inputs=layer_inputs,
+                    outputs=layer_outputs,
+                    scope_name=scope_name)
     return current_inputs, current_outputs
 
 
@@ -5374,90 +5303,81 @@ def aten_slice(mapper, graph, node):
         current_inputs = list(layer_inputs.values())
         # 处理输入1，即%_81
         if inputs_name[1] in mapper.attrs:
-            graph.add_layer(
-                "prim.list",
-                inputs={},
-                outputs=[inputs_name[1] + "_list"],
-                scope_name=scope_name,
-                input0=mapper.attrs[inputs_name[1]])
+            graph.add_layer("prim.list",
+                            inputs={},
+                            outputs=[inputs_name[1] + "_list"],
+                            scope_name=scope_name,
+                            input0=mapper.attrs[inputs_name[1]])
         else:
             mapper._check_input(graph, inputs_node[1], inputs_name[1],
                                 current_outputs, scope_name)
-            graph.add_layer(
-                "prim.list",
-                inputs={"input0": inputs_name[1]},
-                outputs=[inputs_name[1] + "_list"],
-                scope_name=scope_name)
+            graph.add_layer("prim.list",
+                            inputs={"input0": inputs_name[1]},
+                            outputs=[inputs_name[1] + "_list"],
+                            scope_name=scope_name)
             current_inputs.append(inputs_name[1])
         layer_inputs["axes"] = inputs_name[1] + "_list"
         current_inputs.append(inputs_name[1] + "_list")
         current_outputs.append(inputs_name[1] + "_list")
         # 处理输入2，即%82
         if inputs_name[2] in mapper.attrs:
-            graph.add_layer(
-                "prim.list",
-                inputs={},
-                outputs=[inputs_name[2] + "_list"],
-                scope_name=scope_name,
-                input0=mapper.attrs[inputs_name[2]])
+            graph.add_layer("prim.list",
+                            inputs={},
+                            outputs=[inputs_name[2] + "_list"],
+                            scope_name=scope_name,
+                            input0=mapper.attrs[inputs_name[2]])
         else:
             mapper._check_input(graph, inputs_node[2], inputs_name[2],
                                 current_outputs, scope_name)
-            graph.add_layer(
-                "prim.list",
-                inputs={"input0": inputs_name[2]},
-                outputs=[inputs_name[2] + "_list"],
-                scope_name=scope_name)
+            graph.add_layer("prim.list",
+                            inputs={"input0": inputs_name[2]},
+                            outputs=[inputs_name[2] + "_list"],
+                            scope_name=scope_name)
             current_inputs.append(inputs_name[2])
         layer_inputs["starts"] = inputs_name[2] + "_list"
         current_inputs.append(inputs_name[2] + "_list")
         current_outputs.append(inputs_name[2] + "_list")
         # 处理输入3，即%85
         if inputs_name[3] in mapper.attrs:
-            graph.add_layer(
-                "prim.list",
-                inputs={},
-                outputs=[inputs_name[3] + "_list"],
-                scope_name=scope_name,
-                input0=mapper.attrs[inputs_name[3]])
+            graph.add_layer("prim.list",
+                            inputs={},
+                            outputs=[inputs_name[3] + "_list"],
+                            scope_name=scope_name,
+                            input0=mapper.attrs[inputs_name[3]])
         else:
             mapper._check_input(graph, inputs_node[3], inputs_name[3],
                                 current_outputs, scope_name)
-            graph.add_layer(
-                "prim.list",
-                inputs={"input0": inputs_name[3]},
-                outputs=[inputs_name[3] + "_list"],
-                scope_name=scope_name)
+            graph.add_layer("prim.list",
+                            inputs={"input0": inputs_name[3]},
+                            outputs=[inputs_name[3] + "_list"],
+                            scope_name=scope_name)
             current_inputs.append(inputs_name[3])
         layer_inputs["ends"] = inputs_name[3] + "_list"
         current_inputs.append(inputs_name[3] + "_list")
         current_outputs.append(inputs_name[3] + "_list")
         # 处理输入4，即%77
         if inputs_name[4] in mapper.attrs:
-            graph.add_layer(
-                "prim.list",
-                inputs={},
-                outputs=[inputs_name[4] + "_list"],
-                scope_name=scope_name,
-                input0=mapper.attrs[inputs_name[4]])
+            graph.add_layer("prim.list",
+                            inputs={},
+                            outputs=[inputs_name[4] + "_list"],
+                            scope_name=scope_name,
+                            input0=mapper.attrs[inputs_name[4]])
         else:
             mapper._check_input(graph, inputs_node[4], inputs_name[4],
                                 current_outputs, scope_name)
-            graph.add_layer(
-                "prim.list",
-                inputs={"input0": inputs_name[4]},
-                outputs=[inputs_name[4] + "_list"],
-                scope_name=scope_name)
+            graph.add_layer("prim.list",
+                            inputs={"input0": inputs_name[4]},
+                            outputs=[inputs_name[4] + "_list"],
+                            scope_name=scope_name)
             current_inputs.append(inputs_name[4])
         layer_inputs["strides"] = inputs_name[4] + "_list"
         current_inputs.append(inputs_name[4] + "_list")
         current_outputs.append(inputs_name[4] + "_list")
 
-        graph.add_layer(
-            "paddle.strided_slice",
-            inputs=layer_inputs,
-            outputs=layer_outputs,
-            scope_name=scope_name)
+        graph.add_layer("paddle.strided_slice",
+                        inputs=layer_inputs,
+                        outputs=layer_outputs,
+                        scope_name=scope_name)
     else:
         # 处理输入0，即%73
         mapper._check_input(graph, inputs_node[0], inputs_name[0],
@@ -5478,11 +5398,10 @@ def aten_slice(mapper, graph, node):
         # 获取当前节点输入的list
         current_inputs = list(layer_inputs.values())
 
-        graph.add_layer(
-            "prim.slice",
-            inputs=layer_inputs,
-            outputs=layer_outputs,
-            scope_name=scope_name)
+        graph.add_layer("prim.slice",
+                        inputs=layer_inputs,
+                        outputs=layer_outputs,
+                        scope_name=scope_name)
     return current_inputs, current_outputs
 
 
@@ -5513,12 +5432,11 @@ def aten_softmax(mapper, graph, node):
     current_inputs = list(layer_inputs.values())
     layer_attrs["axis"] = mapper.attrs[inputs_name[1]]
 
-    graph.add_layer(
-        "paddle.nn.Softmax",
-        inputs=layer_inputs,
-        outputs=layer_outputs,
-        scope_name=scope_name,
-        **layer_attrs)
+    graph.add_layer("paddle.nn.Softmax",
+                    inputs=layer_inputs,
+                    outputs=layer_outputs,
+                    scope_name=scope_name,
+                    **layer_attrs)
     return current_inputs, current_outputs
 
 
@@ -5550,12 +5468,11 @@ def aten_softplus(mapper, graph, node):
     layer_attrs["beta"] = mapper.attrs[inputs_name[1]]
     layer_attrs["threshold"] = mapper.attrs[inputs_name[2]]
 
-    graph.add_layer(
-        "paddle.nn.Softplus",
-        inputs=layer_inputs,
-        outputs=layer_outputs,
-        scope_name=scope_name,
-        **layer_attrs)
+    graph.add_layer("paddle.nn.Softplus",
+                    inputs=layer_inputs,
+                    outputs=layer_outputs,
+                    scope_name=scope_name,
+                    **layer_attrs)
     return current_inputs, current_outputs
 
 
@@ -5600,12 +5517,11 @@ def aten_split_with_sizes(mapper, graph, node):
     # 获取当前节点输入的list
     current_inputs = list(layer_inputs.values())
 
-    graph.add_layer(
-        "paddle.split",
-        inputs=layer_inputs,
-        outputs=layer_outputs,
-        scope_name=scope_name,
-        **layer_attrs)
+    graph.add_layer("paddle.split",
+                    inputs=layer_inputs,
+                    outputs=layer_outputs,
+                    scope_name=scope_name,
+                    **layer_attrs)
     return current_inputs, current_outputs
 
 
@@ -5631,22 +5547,21 @@ def aten_sqrt(mapper, graph, node):
     # 获取当前节点输入的list
     current_inputs = list(layer_inputs.values())
 
-    graph.add_layer(
-        "paddle.sqrt",
-        inputs=layer_inputs,
-        outputs=layer_outputs,
-        scope_name=scope_name)
+    graph.add_layer("paddle.sqrt",
+                    inputs=layer_inputs,
+                    outputs=layer_outputs,
+                    scope_name=scope_name)
     return current_inputs, current_outputs
 
 
 def aten_squeeze(mapper, graph, node):
-    """ 构造删除位数为1的维度的PaddleLayer。
-    TorchScript示例:
+    """
+    TorchScript Code:
         %12 : Tensor = aten::squeeze(%start_logits.1, %4)
-        参数含义:
-        %12 (Tensor): 输出，删除维度后的Tensor。
-        %start_logits.1 (Tensor): 需要删除维度的Tensor。
-        %4 (int): 维度。
+        Parameter meaning:
+        %12 (Tensor): Output Tensor
+        %start_logits.1 (Tensor): Input Tensor
+        %4 (int): Axis
     """
     scope_name = mapper.normalize_scope_name(node)
     output_name = mapper._get_outputs_name(node)[0]
@@ -5654,28 +5569,33 @@ def aten_squeeze(mapper, graph, node):
     layer_inputs = {}
     layer_attrs = {}
     inputs_name, inputs_node = mapper._get_inputs_name(node)
-    # 获取当前节点输出的list
+    # output list
     current_outputs = [output_name]
-    # 处理输入0，即%start_logits.1
+    # process Input Tensor
     mapper._check_input(graph, inputs_node[0], inputs_name[0], current_outputs,
                         scope_name)
     layer_inputs["x"] = inputs_name[0]
-    # 获取当前节点输入的list
     current_inputs = list(layer_inputs.values())
-    # 处理输入1，即%4
-    if inputs_name[1] in mapper.attrs:
-        layer_attrs["axis"] = mapper.attrs[inputs_name[1]]
+    # If only one input, no axis input
+    if len(inputs_name) == 1:
+        graph.add_layer("paddle.squeeze",
+                        inputs=layer_inputs,
+                        outputs=layer_outputs,
+                        scope_name=scope_name,
+                        **layer_attrs)
     else:
-        mapper._check_input(graph, inputs_node[1], inputs_name[1],
-                            current_outputs, scope_name)
-        layer_inputs["axis"] = inputs_name[1]
-        current_inputs.append(inputs_name[1])
-    graph.add_layer(
-        "paddle.squeeze",
-        inputs=layer_inputs,
-        outputs=layer_outputs,
-        scope_name=scope_name,
-        **layer_attrs)
+        if inputs_name[1] in mapper.attrs:
+            layer_attrs["axis"] = mapper.attrs[inputs_name[1]]
+        else:
+            mapper._check_input(graph, inputs_node[1], inputs_name[1],
+                                current_outputs, scope_name)
+            layer_inputs["axis"] = inputs_name[1]
+            current_inputs.append(inputs_name[1])
+        graph.add_layer("paddle.squeeze",
+                        inputs=layer_inputs,
+                        outputs=layer_outputs,
+                        scope_name=scope_name,
+                        **layer_attrs)
     return current_inputs, current_outputs
 
 
@@ -5710,12 +5630,11 @@ def aten_stack(mapper, graph, node):
                             current_outputs, scope_name)
         layer_inputs["axis"] = inputs_name[1]
         current_inputs.append(inputs_name[1])
-    graph.add_layer(
-        "paddle.stack",
-        inputs=layer_inputs,
-        outputs=layer_outputs,
-        scope_name=scope_name,
-        **layer_attrs)
+    graph.add_layer("paddle.stack",
+                    inputs=layer_inputs,
+                    outputs=layer_outputs,
+                    scope_name=scope_name,
+                    **layer_attrs)
     return current_inputs, current_outputs
 
 
@@ -5759,12 +5678,11 @@ def aten_sub(mapper, graph, node):
     # 获取当前节点输入的list
     current_inputs = list(layer_inputs.values())
 
-    graph.add_layer(
-        "prim.sub",
-        inputs=layer_inputs,
-        outputs=layer_outputs,
-        scope_name=scope_name,
-        **layer_attrs)
+    graph.add_layer("prim.sub",
+                    inputs=layer_inputs,
+                    outputs=layer_outputs,
+                    scope_name=scope_name,
+                    **layer_attrs)
     return current_inputs, current_outputs
 
 
@@ -5790,12 +5708,11 @@ def aten_t(mapper, graph, node):
     # 获取当前节点输入的list
     current_inputs = list(layer_inputs.values())
 
-    graph.add_layer(
-        "paddle.transpose",
-        inputs=layer_inputs,
-        outputs=layer_outputs,
-        scope_name=scope_name,
-        perm=[1, 0])
+    graph.add_layer("paddle.transpose",
+                    inputs=layer_inputs,
+                    outputs=layer_outputs,
+                    scope_name=scope_name,
+                    perm=[1, 0])
     return current_inputs, current_outputs
 
 
@@ -5822,11 +5739,10 @@ def aten_tanh(mapper, graph, node):
     # 获取当前节点输入、输出的list
     current_inputs = list(layer_inputs.values())
 
-    graph.add_layer(
-        "paddle.nn.Tanh",
-        inputs=layer_inputs,
-        outputs=layer_outputs,
-        scope_name=scope_name)
+    graph.add_layer("paddle.nn.Tanh",
+                    inputs=layer_inputs,
+                    outputs=layer_outputs,
+                    scope_name=scope_name)
     return current_inputs, current_outputs
 
 
@@ -5864,33 +5780,31 @@ def aten_split(mapper, graph, node):
         layer_inputs["num_or_sections"] = inputs_name[1]
     else:
         index = mapper.attrs[inputs_name[2]]
-        graph.add_layer(
-            "prim.shape",
-            inputs={"input": inputs_name[0]},
-            outputs=[inputs_name[0] + '_shape'],
-            scope_name=scope_name)
-        graph.add_layer(
-            "prim.getitem",
-            inputs={"list": inputs_name[0] + '_shape'},
-            outputs=[inputs_name[0] + '_dim'],
-            scope_name=scope_name,
-            index=index)
-        graph.add_layer(
-            "prim.floordiv",
-            inputs={'x': inputs_name[0] + '_dim',
-                    'y': inputs_name[1]},
-            outputs=[inputs_name[1] + '_div'],
-            scope_name=scope_name)
+        graph.add_layer("prim.shape",
+                        inputs={"input": inputs_name[0]},
+                        outputs=[inputs_name[0] + '_shape'],
+                        scope_name=scope_name)
+        graph.add_layer("prim.getitem",
+                        inputs={"list": inputs_name[0] + '_shape'},
+                        outputs=[inputs_name[0] + '_dim'],
+                        scope_name=scope_name,
+                        index=index)
+        graph.add_layer("prim.floordiv",
+                        inputs={
+                            'x': inputs_name[0] + '_dim',
+                            'y': inputs_name[1]
+                        },
+                        outputs=[inputs_name[1] + '_div'],
+                        scope_name=scope_name)
         layer_attrs["num_or_sections"] = inputs_name[1] + '_div'
     # 获取当前节点输入的list
     current_inputs = list(layer_inputs.values())
 
-    graph.add_layer(
-        "paddle.split",
-        inputs=layer_inputs,
-        outputs=layer_outputs,
-        scope_name=scope_name,
-        **layer_attrs)
+    graph.add_layer("paddle.split",
+                    inputs=layer_inputs,
+                    outputs=layer_outputs,
+                    scope_name=scope_name,
+                    **layer_attrs)
     return current_inputs, current_outputs
 
 
@@ -5925,62 +5839,58 @@ def aten_transpose(mapper, graph, node):
     dim2 = inputs_name[2]
     # 获取当前节点输入的list
     current_inputs = list(layer_inputs.values())
-    graph.add_layer(
-        "prim.shape",
-        inputs={"input": inputs_name[0]},
-        outputs=[output_name + "_shape"],
-        scope_name=scope_name)
+    graph.add_layer("prim.shape",
+                    inputs={"input": inputs_name[0]},
+                    outputs=[output_name + "_shape"],
+                    scope_name=scope_name)
     current_outputs.append(output_name + "_shape")
-    graph.add_layer(
-        "prim.len",
-        inputs={"input": output_name + "_shape"},
-        outputs=[output_name + "_len"],
-        scope_name=scope_name)
+    graph.add_layer("prim.len",
+                    inputs={"input": output_name + "_shape"},
+                    outputs=[output_name + "_len"],
+                    scope_name=scope_name)
     current_outputs.append(output_name + "_len")
     current_inputs.append(output_name + "_shape")
-    graph.add_layer(
-        "prim.len2list",
-        inputs={"len": output_name + "_len"},
-        outputs=[output_name + "_list"],
-        scope_name=scope_name)
+    graph.add_layer("prim.len2list",
+                    inputs={"len": output_name + "_len"},
+                    outputs=[output_name + "_list"],
+                    scope_name=scope_name)
     current_outputs.append(output_name + "_list")
     current_inputs.append(output_name + "_len")
-    graph.add_layer(
-        "prim.check_dim",
-        inputs={"len": output_name + "_len",
-                "dim": dim1},
-        outputs=[dim1 + "_new"],
-        scope_name=scope_name)
-    graph.add_layer(
-        "prim.check_dim",
-        inputs={"len": output_name + "_len",
-                "dim": dim2},
-        outputs=[dim2 + "_new"],
-        scope_name=scope_name)
-    graph.add_layer(
-        "prim.replaceitem",
-        inputs={
-            "list": output_name + "_list",
-            "index": dim1 + "_new",
-            "item": dim2 + "_new"
-        },
-        outputs=[],
-        scope_name=scope_name)
-    graph.add_layer(
-        "prim.replaceitem",
-        inputs={
-            "list": output_name + "_list",
-            "index": dim2 + "_new",
-            "item": dim1 + "_new"
-        },
-        outputs=[],
-        scope_name=scope_name)
-    graph.add_layer(
-        "paddle.transpose",
-        inputs=layer_inputs,
-        outputs=layer_outputs,
-        scope_name=scope_name,
-        perm=output_name + "_list")
+    graph.add_layer("prim.check_dim",
+                    inputs={
+                        "len": output_name + "_len",
+                        "dim": dim1
+                    },
+                    outputs=[dim1 + "_new"],
+                    scope_name=scope_name)
+    graph.add_layer("prim.check_dim",
+                    inputs={
+                        "len": output_name + "_len",
+                        "dim": dim2
+                    },
+                    outputs=[dim2 + "_new"],
+                    scope_name=scope_name)
+    graph.add_layer("prim.replaceitem",
+                    inputs={
+                        "list": output_name + "_list",
+                        "index": dim1 + "_new",
+                        "item": dim2 + "_new"
+                    },
+                    outputs=[],
+                    scope_name=scope_name)
+    graph.add_layer("prim.replaceitem",
+                    inputs={
+                        "list": output_name + "_list",
+                        "index": dim2 + "_new",
+                        "item": dim1 + "_new"
+                    },
+                    outputs=[],
+                    scope_name=scope_name)
+    graph.add_layer("paddle.transpose",
+                    inputs=layer_inputs,
+                    outputs=layer_outputs,
+                    scope_name=scope_name,
+                    perm=output_name + "_list")
     return current_inputs, current_outputs
 
 
@@ -6013,12 +5923,11 @@ def aten_to(mapper, graph, node):
     else:
         layer_attrs["dtype"] = dtype_dict[mapper.attrs[inputs_name[1]]]
 
-    graph.add_layer(
-        "paddle.cast",
-        inputs=layer_inputs,
-        outputs=layer_outputs,
-        scope_name=scope_name,
-        **layer_attrs)
+    graph.add_layer("paddle.cast",
+                    inputs=layer_inputs,
+                    outputs=layer_outputs,
+                    scope_name=scope_name,
+                    **layer_attrs)
     return current_inputs, current_outputs
 
 
@@ -6047,19 +5956,17 @@ def aten_type_as(mapper, graph, node):
     # 处理输入0，即%mask.1
     mapper._check_input(graph, inputs_node[1], inputs_name[1], current_outputs,
                         scope_name)
-    graph.add_layer(
-        "prim.type",
-        inputs={"input": inputs_name[1]},
-        outputs=[inputs_name[1] + "_type"],
-        scope_name=scope_name)
+    graph.add_layer("prim.type",
+                    inputs={"input": inputs_name[1]},
+                    outputs=[inputs_name[1] + "_type"],
+                    scope_name=scope_name)
     layer_inputs["dtype"] = inputs_name[1] + "_type"
     current_inputs.append(inputs_name[1])
 
-    graph.add_layer(
-        "paddle.cast",
-        inputs=layer_inputs,
-        outputs=layer_outputs,
-        scope_name=scope_name)
+    graph.add_layer("paddle.cast",
+                    inputs=layer_inputs,
+                    outputs=layer_outputs,
+                    scope_name=scope_name)
     return current_inputs, current_outputs
 
 
@@ -6094,12 +6001,11 @@ def aten_unsqueeze(mapper, graph, node):
                             current_outputs, scope_name)
         layer_inputs["axis"] = inputs_name[1]
         current_inputs.append(inputs_name[1])
-    graph.add_layer(
-        "paddle.unsqueeze",
-        inputs=layer_inputs,
-        outputs=layer_outputs,
-        scope_name=scope_name,
-        **layer_attrs)
+    graph.add_layer("paddle.unsqueeze",
+                    inputs=layer_inputs,
+                    outputs=layer_outputs,
+                    scope_name=scope_name,
+                    **layer_attrs)
     return current_inputs, current_outputs
 
 
@@ -6137,24 +6043,21 @@ def aten_upsample_bilinear2d(mapper, graph, node):
                             current_outputs, scope_name)
         layer_inputs["size"] = inputs_name[1]
         current_inputs.append(inputs_name[1])
-        graph.add_layer(
-            "prim.isinstance",
-            inputs={"input": inputs_name[1]},
-            outputs=[inputs_name[1] + "_isinstance"],
-            scope_name=scope_name,
-            cls="paddle.static.Variable")
+        graph.add_layer("prim.isinstance",
+                        inputs={"input": inputs_name[1]},
+                        outputs=[inputs_name[1] + "_isinstance"],
+                        scope_name=scope_name,
+                        cls="paddle.static.Variable")
         # TODO(syf): paddle.Variable
-        graph.add_layer(
-            "prim.if", {"input": inputs_name[1] + "_isinstance"},
-            outputs=[inputs_name[0] + "_if1"],
-            scope_name=scope_name)
+        graph.add_layer("prim.if", {"input": inputs_name[1] + "_isinstance"},
+                        outputs=[inputs_name[0] + "_if1"],
+                        scope_name=scope_name)
         if_layer = graph.layers[list(graph.layers.keys())[-1]]
         block = PaddleGraph(source_type="pytorch", parent_layer=if_layer)
-        block.add_layer(
-            "prim.var2list",
-            inputs={"input": inputs_name[1]},
-            outputs=[inputs_name[1]],
-            scope_name=scope_name)
+        block.add_layer("prim.var2list",
+                        inputs={"input": inputs_name[1]},
+                        outputs=[inputs_name[1]],
+                        scope_name=scope_name)
         if_layer.add_block(block)
         block = PaddleGraph(source_type="pytorch", parent_layer=if_layer)
         if_layer.add_block(block)
@@ -6173,12 +6076,11 @@ def aten_upsample_bilinear2d(mapper, graph, node):
         layer_inputs["scale_factor"] = inputs_name[3]
     layer_attrs["align_mode"] = 0
     layer_attrs["mode"] = string("bilinear")
-    graph.add_layer(
-        "paddle.nn.functional.interpolate",
-        inputs=layer_inputs,
-        outputs=layer_outputs,
-        scope_name=scope_name,
-        **layer_attrs)
+    graph.add_layer("paddle.nn.functional.interpolate",
+                    inputs=layer_inputs,
+                    outputs=layer_outputs,
+                    scope_name=scope_name,
+                    **layer_attrs)
     return current_inputs, current_outputs
 
 
@@ -6233,12 +6135,11 @@ def aten_upsample_trilinear3d(mapper, graph, node):
     layer_attrs["align_mode"] = 0
     layer_attrs["mode"] = string("trilinear")
     layer_attrs["data_format"] = string("NCDHW")
-    graph.add_layer(
-        "paddle.nn.functional.interpolate",
-        inputs=layer_inputs,
-        outputs=layer_outputs,
-        scope_name=scope_name,
-        **layer_attrs)
+    graph.add_layer("paddle.nn.functional.interpolate",
+                    inputs=layer_inputs,
+                    outputs=layer_outputs,
+                    scope_name=scope_name,
+                    **layer_attrs)
     return current_inputs, current_outputs
 
 
@@ -6275,24 +6176,21 @@ def aten_upsample_nearest2d(mapper, graph, node):
                             current_outputs, scope_name)
         layer_inputs["size"] = inputs_name[1]
         current_inputs.append(inputs_name[1])
-        graph.add_layer(
-            "prim.isinstance",
-            inputs={"input": inputs_name[1]},
-            outputs=[inputs_name[1] + "_isinstance"],
-            scope_name=scope_name,
-            cls="paddle.static.Variable")
+        graph.add_layer("prim.isinstance",
+                        inputs={"input": inputs_name[1]},
+                        outputs=[inputs_name[1] + "_isinstance"],
+                        scope_name=scope_name,
+                        cls="paddle.static.Variable")
         # TODO(syf): paddle.Variable
-        graph.add_layer(
-            "prim.if", {"input": inputs_name[1] + "_isinstance"},
-            outputs=[inputs_name[0] + "_if1"],
-            scope_name=scope_name)
+        graph.add_layer("prim.if", {"input": inputs_name[1] + "_isinstance"},
+                        outputs=[inputs_name[0] + "_if1"],
+                        scope_name=scope_name)
         if_layer = graph.layers[list(graph.layers.keys())[-1]]
         block = PaddleGraph(source_type="pytorch", parent_layer=if_layer)
-        block.add_layer(
-            "prim.var2list",
-            inputs={"input": inputs_name[1]},
-            outputs=[inputs_name[1]],
-            scope_name=scope_name)
+        block.add_layer("prim.var2list",
+                        inputs={"input": inputs_name[1]},
+                        outputs=[inputs_name[1]],
+                        scope_name=scope_name)
         if_layer.add_block(block)
         block = PaddleGraph(source_type="pytorch", parent_layer=if_layer)
         if_layer.add_block(block)
@@ -6303,12 +6201,11 @@ def aten_upsample_nearest2d(mapper, graph, node):
         layer_inputs["scale_factor"] = inputs_name[2]
     layer_attrs["align_mode"] = 0
     layer_attrs["mode"] = string("nearest")
-    graph.add_layer(
-        "paddle.nn.functional.interpolate",
-        inputs=layer_inputs,
-        outputs=layer_outputs,
-        scope_name=scope_name,
-        **layer_attrs)
+    graph.add_layer("paddle.nn.functional.interpolate",
+                    inputs=layer_inputs,
+                    outputs=layer_outputs,
+                    scope_name=scope_name,
+                    **layer_attrs)
     return current_inputs, current_outputs
 
 
@@ -6334,11 +6231,10 @@ def aten_values(mapper, graph, node):
     # 获取当前节点输入的list
     current_inputs = list(layer_inputs.values())
 
-    graph.add_layer(
-        "prim.dict2values",
-        inputs=layer_inputs,
-        outputs=layer_outputs,
-        scope_name=scope_name)
+    graph.add_layer("prim.dict2values",
+                    inputs=layer_inputs,
+                    outputs=layer_outputs,
+                    scope_name=scope_name)
     return current_inputs, current_outputs
 
 
@@ -6378,12 +6274,11 @@ def aten_view(mapper, graph, node):
                             current_outputs, scope_name)
         layer_inputs["shape"] = inputs_name[1]
         current_inputs.append(inputs_name[1])
-    graph.add_layer(
-        "paddle.reshape",
-        inputs=layer_inputs,
-        outputs=layer_outputs,
-        scope_name=scope_name,
-        **layer_attrs)
+    graph.add_layer("paddle.reshape",
+                    inputs=layer_inputs,
+                    outputs=layer_outputs,
+                    scope_name=scope_name,
+                    **layer_attrs)
     return current_inputs, current_outputs
 
 
@@ -6418,12 +6313,11 @@ def aten_warn(mapper, graph, node):
         layer_inputs["stacklevel"] = inputs_name[1]
         current_inputs.append(inputs_name[1])
 
-    graph.add_layer(
-        "prim.warnings",
-        inputs=layer_inputs,
-        outputs=layer_outputs,
-        scope_name=scope_name,
-        **layer_attrs)
+    graph.add_layer("prim.warnings",
+                    inputs=layer_inputs,
+                    outputs=layer_outputs,
+                    scope_name=scope_name,
+                    **layer_attrs)
     return current_inputs, current_outputs
 
 
@@ -6459,11 +6353,10 @@ def aten_where(mapper, graph, node):
     # 获取当前节点输入的list
     current_inputs = list(layer_inputs.values())
 
-    graph.add_layer(
-        "paddle.where",
-        inputs=layer_inputs,
-        outputs=layer_outputs,
-        scope_name=scope_name)
+    graph.add_layer("paddle.where",
+                    inputs=layer_inputs,
+                    outputs=layer_outputs,
+                    scope_name=scope_name)
     return current_inputs, current_outputs
 
 
@@ -6499,12 +6392,11 @@ def aten_zeros(mapper, graph, node):
     # 处理输入1，即%8，代表dtype
     layer_attrs["dtype"] = dtype_dict[mapper.attrs[inputs_name[1]]]
 
-    graph.add_layer(
-        "paddle.zeros",
-        inputs=layer_inputs,
-        outputs=layer_outputs,
-        scope_name=scope_name,
-        **layer_attrs)
+    graph.add_layer("paddle.zeros",
+                    inputs=layer_inputs,
+                    outputs=layer_outputs,
+                    scope_name=scope_name,
+                    **layer_attrs)
     return current_inputs, current_outputs
 
 
@@ -6538,10 +6430,428 @@ def aten_zeros_like(mapper, graph, node):
     # 处理输入1，即%655，代表dtype
     layer_attrs["dtype"] = dtype_dict[mapper.attrs[inputs_name[1]]]
 
-    graph.add_layer(
-        "paddle.zeros_like",
-        inputs=layer_inputs,
-        outputs=layer_outputs,
-        scope_name=scope_name,
-        **layer_attrs)
+    graph.add_layer("paddle.zeros_like",
+                    inputs=layer_inputs,
+                    outputs=layer_outputs,
+                    scope_name=scope_name,
+                    **layer_attrs)
     return current_inputs, current_outputs
+
+
+def aten_amax(mapper, graph, node):
+    """
+    TorchScript:
+        %max_scores : Tensor = aten::argmax(%scores.1, %2973, %1914)
+        Parameter meaning:
+        %max_scores (Tensor): Output Tensor
+        %scores.1 (Tensor): Input Tensor
+        %2973 (int/list): Axis
+        %1914 (bool): Keepdim
+    """
+    scope_name = mapper.normalize_scope_name(node)
+    output_name = mapper._get_outputs_name(node)[0]
+    layer_outputs = [output_name]
+    layer_inputs = {}
+    layer_attrs = {}
+    squeeze_dim = None
+    inputs_name, inputs_node = mapper._get_inputs_name(node)
+    # 获取当前节点输出的list
+    current_outputs = [output_name]
+    # 处理输入0，即%scores.1
+    mapper._check_input(graph, inputs_node[0], inputs_name[0], current_outputs,
+                        scope_name)
+    layer_inputs["x"] = inputs_name[0]
+    current_inputs = list(layer_inputs.values())
+    # process Axis
+    if inputs_name[1] in mapper.attrs:
+        layer_attrs["axis"] = mapper.attrs[inputs_name[1]]
+        squeeze_dim = mapper.attrs[inputs_name[1]]
+    else:
+        mapper._check_input(graph, inputs_node[1], inputs_name[1],
+                            current_outputs, scope_name)
+        layer_inputs["axis"] = inputs_name[1]
+        current_inputs.append(inputs_name[1])
+        squeeze_dim = inputs_name[1]
+    # process Keepdim
+    if inputs_name[2] in mapper.attrs:
+        layer_attrs["keepdim"] = mapper.attrs[inputs_name[2]]
+    else:
+        mapper._check_input(graph, inputs_node[2], inputs_name[2],
+                            current_outputs, scope_name)
+        layer_inputs["keepdim"] = inputs_name[2]
+        current_inputs.append(inputs_name[2])
+
+    if "keepdim" in layer_inputs and not layer_inputs["keepdim"] or (
+            "keepdim" in layer_attrs and not layer_attrs["keepdim"]):
+        if "keepdim" in layer_inputs:
+            layer_inputs["keepdim"] = True
+        else:
+            layer_attrs["keepdim"] = True
+        graph.add_layer("paddle.amax",
+                        inputs=layer_inputs,
+                        outputs=[output_name + "_unsqueezed"],
+                        scope_name=scope_name,
+                        **layer_attrs)
+
+        graph.add_layer("paddle.squeeze",
+                        inputs={"x": output_name + "_unsqueezed"},
+                        outputs=layer_outputs,
+                        scope_name=scope_name,
+                        **{"axis": squeeze_dim})
+    else:
+        graph.add_layer("paddle.amax",
+                        inputs=layer_inputs,
+                        outputs=layer_outputs,
+                        scope_name=scope_name,
+                        **layer_attrs)
+
+    return current_inputs, current_outputs
+
+
+def aten_amin(mapper, graph, node):
+    """
+    TorchScript:
+        %max_scores : Tensor = aten::amin(%scores.1, %2973, %1914)
+        Parameter meaning:
+        %max_scores (Tensor): Output Tensor
+        %scores.1 (Tensor): Input Tensor
+        %2973 (int/list): Axis
+        %1914 (bool): Keepdim
+    """
+    scope_name = mapper.normalize_scope_name(node)
+    output_name = mapper._get_outputs_name(node)[0]
+    layer_outputs = [output_name]
+    layer_inputs = {}
+    layer_attrs = {}
+    squeeze_dim = None
+    inputs_name, inputs_node = mapper._get_inputs_name(node)
+    # 获取当前节点输出的list
+    current_outputs = [output_name]
+    # 处理输入0，即%scores.1
+    mapper._check_input(graph, inputs_node[0], inputs_name[0], current_outputs,
+                        scope_name)
+    layer_inputs["x"] = inputs_name[0]
+    current_inputs = list(layer_inputs.values())
+    # process Axis
+    if inputs_name[1] in mapper.attrs:
+        layer_attrs["axis"] = mapper.attrs[inputs_name[1]]
+        squeeze_dim = mapper.attrs[inputs_name[1]]
+    else:
+        mapper._check_input(graph, inputs_node[1], inputs_name[1],
+                            current_outputs, scope_name)
+        layer_inputs["axis"] = inputs_name[1]
+        current_inputs.append(inputs_name[1])
+        squeeze_dim = inputs_name[1]
+    # process Keepdim
+    if inputs_name[2] in mapper.attrs:
+        layer_attrs["keepdim"] = mapper.attrs[inputs_name[2]]
+    else:
+        mapper._check_input(graph, inputs_node[2], inputs_name[2],
+                            current_outputs, scope_name)
+        layer_inputs["keepdim"] = inputs_name[2]
+        current_inputs.append(inputs_name[2])
+
+    if "keepdim" in layer_inputs and not layer_inputs["keepdim"] or (
+            "keepdim" in layer_attrs and not layer_attrs["keepdim"]):
+        if "keepdim" in layer_inputs:
+            layer_inputs["keepdim"] = True
+        else:
+            layer_attrs["keepdim"] = True
+        graph.add_layer("paddle.amin",
+                        inputs=layer_inputs,
+                        outputs=[output_name + "_unsqueezed"],
+                        scope_name=scope_name,
+                        **layer_attrs)
+
+        graph.add_layer("paddle.squeeze",
+                        inputs={"x": output_name + "_unsqueezed"},
+                        outputs=layer_outputs,
+                        scope_name=scope_name,
+                        **{"axis": squeeze_dim})
+    else:
+        graph.add_layer("paddle.amin",
+                        inputs=layer_inputs,
+                        outputs=layer_outputs,
+                        scope_name=scope_name,
+                        **layer_attrs)
+
+    return current_inputs, current_outputs
+
+
+def aten_topk(mapper, graph, node):
+    """
+    TorchScript:
+        %scores, %index.5 = aten::topk(%2233, %1900, %1909, %1916, %1916)
+        Parameter meaning:
+        %scores (Tensor): Output Tensor, values
+        %index.5 (Tensor): Output Tensor, indices
+        %2233 (Tensor): Input Tensor
+        %1900 (int): K
+        %1909 (int): Dim
+        %1916 (bool): Largest
+        %1916 (bool): Sorted
+    """
+    scope_name = mapper.normalize_scope_name(node)
+    output_name = mapper._get_outputs_name(node)
+    layer_outputs = output_name
+    layer_inputs = {}
+    layer_attrs = {}
+    inputs_name, inputs_node = mapper._get_inputs_name(node)
+    # 获取当前节点输出的list
+    current_outputs = [output_name]
+    # 处理输入0，即%2233
+    mapper._check_input(graph, inputs_node[0], inputs_name[0], current_outputs,
+                        scope_name)
+    layer_inputs["x"] = inputs_name[0]
+    current_inputs = list(layer_inputs.values())
+    # 处理输入1，即%1900，代表k
+    mapper._check_input(graph, inputs_node[1], inputs_name[1], current_outputs,
+                        scope_name)
+    layer_inputs["k"] = inputs_name[1]
+    current_inputs.append(inputs_name[1])
+    # process axis
+    if inputs_name[2] in mapper.attrs:
+        layer_attrs["axis"] = mapper.attrs[inputs_name[2]]
+    else:
+        mapper._check_input(graph, inputs_node[2], inputs_name[2],
+                            current_outputs, scope_name)
+        layer_inputs["axis"] = inputs_name[2]
+        current_inputs.append(inputs_name[2])
+    # process largest
+    if inputs_name[3] in mapper.attrs:
+        layer_attrs["largest"] = mapper.attrs[inputs_name[3]]
+    else:
+        mapper._check_input(graph, inputs_node[3], inputs_name[3],
+                            current_outputs, scope_name)
+        layer_inputs["largest"] = inputs_name[3]
+        current_inputs.append(inputs_name[3])
+    # process sorted
+    if inputs_name[4] in mapper.attrs:
+        layer_attrs["sorted"] = mapper.attrs[inputs_name[4]]
+    else:
+        mapper._check_input(graph, inputs_node[4], inputs_name[4],
+                            current_outputs, scope_name)
+        layer_inputs["sorted"] = inputs_name[4]
+        current_inputs.append(inputs_name[4])
+
+    graph.add_layer("paddle.topk",
+                    inputs=layer_inputs,
+                    outputs=layer_outputs,
+                    scope_name=scope_name,
+                    **layer_attrs)
+
+    return current_inputs, current_outputs
+
+
+def aten_pad(mapper, graph, node):
+    """
+    TorchScript Code:
+        %input.23 : Tensor = aten::pad(%input.21, %116, %114, %113)
+        Parameter meaning:
+        %input.21 (Tensor): Input Tensor
+        %116 (list): pad
+        %114 (str): pad mode
+        %113 (float): value
+    """
+    scope_name = mapper.normalize_scope_name(node)
+    op_name = name_generator("pad", mapper.nn_name2id)
+    output_name = mapper._get_outputs_name(node)[0]
+    layer_inputs = {}
+    layer_attrs = {}
+    inputs_name, inputs_node = mapper._get_inputs_name(node)
+    # Output list
+    current_outputs = [output_name]
+    # process Input Tensor
+    mapper._check_input(graph, inputs_node[0], inputs_name[0], current_outputs,
+                        scope_name)
+
+    # process pad
+    padding_attr = None
+    if inputs_name[1] in mapper.attrs:
+        padding_attr = mapper.attrs[inputs_name[1]]
+    else:
+        mapper._check_input(graph, inputs_node[1], inputs_name[1],
+                            current_outputs, scope_name)
+        layer_inputs["pad"] = inputs_name[1]
+
+    # process `mode`
+    _pad_mode = mapper.attrs[inputs_name[2]]
+    layer_attrs["mode"] = _pad_mode
+
+    # process value, try to conver to `float`
+    # with `None` which raise exception, make `value` be `0` as default.
+    _pad_value = mapper.attrs[inputs_name[3]]
+    _pad_value = _pad_value or 0
+    try:
+        _pad_value = float(_pad_value)
+    except ValueError:
+        _pad_value = 0
+    layer_attrs["value"] = _pad_value
+
+    # process `data_format`
+    # TODO(megemini): the lastest version of `Paddle v3`,
+    # just make `data_format = string("None")`
+    # because `paddle.nn.functional.pad` can infer from input `x`
+    data_format = string("None")
+    if inputs_name[0] in mapper.attrs:
+        x_dim = len(mapper.attrs[inputs_name[0]])
+        if x_dim == 3:
+            data_format = string("NCL")
+        elif x_dim == 4:
+            data_format = string("NCHW")
+        elif x_dim == 5:
+            data_format = string("NCDHW")
+    else:
+        if len(padding_attr) == 2:
+            data_format = string("NCL")
+        elif len(padding_attr) == 4:
+            data_format = string("NCHW")
+        elif len(padding_attr) == 6:
+            data_format = string("NCDHW")
+    layer_attrs["data_format"] = data_format
+
+    # process `pad`
+    if padding_attr is not None:
+        layer_attrs["pad"] = padding_attr
+        if 'constant' in _pad_mode:
+            if len(padding_attr) == 2:
+                layer_attrs["pad"] = [0, 0, 0, 0, 0, 0] + padding_attr
+            elif len(padding_attr) == 4:
+                layer_attrs["pad"] = [0, 0, 0, 0] + padding_attr
+            elif len(padding_attr) == 6:
+                layer_attrs["pad"] = [0, 0] + padding_attr
+
+    # input and kernel
+    layer_inputs["x"] = inputs_name[0]
+    kernel_name = "paddle.nn.functional.pad"
+
+    graph.add_layer(kernel_name,
+                    inputs=layer_inputs,
+                    outputs=[output_name],
+                    scope_name=scope_name,
+                    **layer_attrs)
+    current_inputs = list(layer_inputs.values())
+    return current_inputs, current_outputs
+
+
+def aten_list(mapper, graph, node):
+    """ python 的 `list` 转换，如 `list((1,2,3))`
+    TorchScript示例:
+        %1926 : int[] = aten::list(%1925)
+        参数含义:
+        %1926 (list): 输出，转换为list。
+        %1925 (-): 可以转为list的输入
+    """
+    scope_name = mapper.normalize_scope_name(node)
+    output_name = mapper._get_outputs_name(node)[0]
+    layer_outputs = [output_name]
+    layer_inputs = {}
+    layer_attrs = {}
+    inputs_name, inputs_node = mapper._get_inputs_name(node)
+    # 获取当前节点输出的list
+    current_outputs = [output_name]
+
+    # process input
+    layer_inputs["x"] = inputs_name[0]
+
+    # 获取当前节点输入的list
+    current_inputs = list(layer_inputs.values())
+
+    graph.add_layer("prim.list_",
+                    inputs=layer_inputs,
+                    outputs=layer_outputs,
+                    scope_name=scope_name)
+    return current_inputs, current_outputs
+
+
+def aten_scaled_dot_product_attention(mapper, graph, node):
+    """
+    TorchScript:
+        %attn_output.17 : Tensor = aten::scaled_dot_product_attention(
+            %query_layer.9,
+            %key_layer.9,
+            %value_layer.9,
+            %attention_mask,
+            %13,
+            %29,
+            %19)
+        Parameter meaning:
+        %attn_output.17 (Tensor): output Tensor
+        %query_layer.9 (Tensor): input query
+        %key_layer.9 (Tensor): input key
+        %value_layer.9 (Tensor): input value
+        %attention_mask (Tensor): input mask
+        %13 (float): dropout ratio
+        %29 (bool): is_causal
+        %19 (float): scale, default is None. Note: paddle not support this param.
+    """
+    logger.warning(
+        "This API `paddle.nn.functional.scaled_dot_product_attention` only supports inputs with dtype float16 and bfloat16.\n"
+        "And the function is subject to change.\n"
+        "If `transformers` is using for loading model from pretrained, try to use `attn_implementation='eager'`.\n"
+        "e.g. `torch_model = BertForMaskedLM.from_pretrained('/checkpoints', attn_implementation='eager')`"
+    )
+
+    scope_name = mapper.normalize_scope_name(node)
+    output_name = mapper._get_outputs_name(node)
+    layer_outputs = output_name
+    layer_inputs = {}
+    layer_attrs = {}
+    inputs_name, inputs_node = mapper._get_inputs_name(node)
+    # 获取当前节点输出的list
+    current_outputs = [output_name]
+
+    # 处理输入0，即%query_layer.9
+    mapper._check_input(graph, inputs_node[0], inputs_name[0], current_outputs,
+                        scope_name)
+    layer_inputs["query"] = inputs_name[0]
+
+    # 处理输入1，即%key_layer.9
+    mapper._check_input(graph, inputs_node[1], inputs_name[1], current_outputs,
+                        scope_name)
+    layer_inputs["key"] = inputs_name[1]
+
+    # 处理输入2，即%value_layer.9
+    mapper._check_input(graph, inputs_node[2], inputs_name[2], current_outputs,
+                        scope_name)
+    layer_inputs["value"] = inputs_name[2]
+
+    # 处理输入3，即%attention_mask
+    mapper._check_input(graph, inputs_node[3], inputs_name[3], current_outputs,
+                        scope_name)
+    layer_inputs["attn_mask"] = inputs_name[3]
+
+    # process dropout ratio
+    if inputs_name[4] in mapper.attrs:
+        layer_attrs["dropout_p"] = mapper.attrs[inputs_name[4]]
+    else:
+        mapper._check_input(graph, inputs_node[4], inputs_name[4],
+                            current_outputs, scope_name)
+        layer_inputs["dropout_p"] = inputs_name[4]
+
+    # process is_causal
+    if inputs_name[5] in mapper.attrs:
+        layer_attrs["is_causal"] = mapper.attrs[inputs_name[5]]
+    else:
+        mapper._check_input(graph, inputs_node[5], inputs_name[5],
+                            current_outputs, scope_name)
+        layer_inputs["is_causal"] = inputs_name[5]
+
+    layer_attrs["training"] = False
+
+    # 获取当前节点输入的list
+    current_inputs = list(layer_inputs.values())
+
+    graph.add_layer("paddle.nn.functional.scaled_dot_product_attention",
+                    inputs=layer_inputs,
+                    outputs=layer_outputs,
+                    scope_name=scope_name,
+                    **layer_attrs)
+
+    return current_inputs, current_outputs
+
+
+# pytorch has one more param: `dtype`, which is not used.
+aten_linalg_vector_norm = aten_norm
+
+aten_unsafe_chunk = aten_chunk

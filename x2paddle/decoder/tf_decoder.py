@@ -22,6 +22,7 @@ import sys
 
 
 class TFGraphNode(GraphNode):
+
     def __init__(self, layer, layer_name=None, data_format="NHWC"):
         if layer_name is None:
             super(TFGraphNode, self).__init__(
@@ -127,6 +128,7 @@ class TFGraphNode(GraphNode):
 
 
 class TFGraph(Graph):
+
     def __init__(self, model, data_format="NHWC"):
         super(TFGraph, self).__init__(model)
         self.identity_map = dict()
@@ -139,15 +141,15 @@ class TFGraph(Graph):
             if layer.op == 'Assert':
                 continue
             self.node_map[layer.name.replace('/', '_').replace(
-                '-', '_')] = TFGraphNode(
-                    layer, data_format=self.tf_data_format)
+                '-', '_')] = TFGraphNode(layer, data_format=self.tf_data_format)
 
         for layer_name, node in self.node_map.items():
             if node.layer_type == 'Const':
                 continue
             for in_node in node.layer.input:
-                in_node = in_node.replace('/', '_').replace('-', '_').replace(
-                    '^', '')
+                in_node = in_node.replace('/',
+                                          '_').replace('-',
+                                                       '_').replace('^', '')
                 if in_node not in self.node_map:
                     if in_node.strip().split(':')[0] in self.node_map:
                         self.connect(in_node.strip().split(':')[0], layer_name)
@@ -321,6 +323,7 @@ class TFGraph(Graph):
 
 
 class TFDecoder(object):
+
     def __init__(self, pb_model, data_format="NHWC", define_input_shape=False):
         try:
             self.sess = tf.compat.v1.Session()
@@ -343,10 +346,19 @@ class TFDecoder(object):
             initializer = tf.compat.v1.global_variables_initializer()
         except:
             initializer = tf.global_variables_initializer()
-        self.sess.run(initializer)
 
-        self.tf_graph = TFGraph(
-            self.sess.graph._as_graph_def(add_shapes=True)[0], data_format)
+        if initializer is not None:
+            self.sess.run(initializer)
+
+        # PaddleV3 for tf 2.x, manually updates shapes
+        _graph, _ = self.sess.graph._as_graph_def(add_shapes=False)
+        for node in _graph.node:
+            op = self.sess.graph._get_operation_by_name(node.name)
+            if op.outputs:
+                node.attr["_output_shapes"].list.shape.extend(
+                    [output.get_shape().as_proto() for output in op.outputs])
+
+        self.tf_graph = TFGraph(_graph, data_format)
         self.tf_graph.build()
 
     def _fix_output_shape(self, graph):
@@ -409,11 +421,7 @@ class TFDecoder(object):
 
                 right_shape_been_input = False
                 while not right_shape_been_input:
-                    try:
-                        shape = raw_input(
-                            "Shape of Input(e.g. None,224,224,3): ")
-                    except:
-                        shape = input("Shape of Input(e.g. None,224,224,3): ")
+                    shape = input("Shape of Input(e.g. None,224,224,3): ")
                     if shape.count("None") > 1:
                         print("Only 1 dimension can be None, type again:)")
                     else:
@@ -425,15 +433,16 @@ class TFDecoder(object):
                 ]
                 assert shape.count(None) <= 1, "Only one dimension can be None"
                 try:
+                    tf.compat.v1.disable_eager_execution()
                     x2paddle_input = tf.compat.v1.placeholder(
                         dtype=dtype,
                         shape=shape,
                         name="x2paddle_{}".format(layer.name))
                 except:
-                    x2paddle_input = tf.placeholder(
-                        dtype=dtype,
-                        shape=shape,
-                        name="x2paddle_{}".format(layer.name))
+                    x2paddle_input = tf.placeholder(dtype=dtype,
+                                                    shape=shape,
+                                                    name="x2paddle_{}".format(
+                                                        layer.name))
 
                 input_map["{}:0".format(layer.name)] = x2paddle_input
                 if shape.count(None) > 0:
