@@ -29,9 +29,8 @@ class TestEinsumConvert(OPConvertAutoScanTest):
                      min_size=2,
                      max_size=5))
 
-        input_dtype = draw(
-            st.sampled_from(["float32", "float64"]))
-        
+        input_dtype = draw(st.sampled_from(["float32", "float64"]))
+
         equation = "i,j->ij"
 
         config = {
