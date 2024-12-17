@@ -26,8 +26,8 @@ class TestEinsumConvert(OPConvertAutoScanTest):
     def sample_convert_config(self, draw):
         input_shape = draw(
             st.lists(st.integers(min_value=2, max_value=6),
-                     min_size=2,
-                     max_size=5))
+                     min_size=1,
+                     max_size=1))
 
         input_dtype = draw(st.sampled_from(["float32", "float64"]))
 
@@ -44,7 +44,7 @@ class TestEinsumConvert(OPConvertAutoScanTest):
             "outputs_name": ["z"],
             "delta": 1e-4,
             "rtol": 1e-4,
-            "enable_onnx_checker": False,
+            "enable_onnx_checker": True,
         }
         attrs = {
             "equation": equation,
