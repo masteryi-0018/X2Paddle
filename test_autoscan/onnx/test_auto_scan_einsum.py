@@ -53,7 +53,7 @@ class TestEinsumConvert(OPConvertAutoScanTest):
         return (config, attrs)
 
     def test(self):
-        self.run_and_statis(max_examples=25)
+        self.run_and_statis(max_examples=30)
 
 
 if __name__ == "__main__":
