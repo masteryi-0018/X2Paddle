@@ -25,7 +25,7 @@ class TestEinsumConvert(OPConvertAutoScanTest):
 
     def sample_convert_config(self, draw):
         input_shape = draw(
-            st.lists(st.integers(min_value=2, max_value=6),
+            st.lists(st.integers(min_value=10, max_value=50),
                      min_size=1,
                      max_size=1))
 
